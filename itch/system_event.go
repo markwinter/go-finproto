@@ -1,3 +1,6 @@
+/*
+ * Copyright (c) 2022 Mark Edward Winter
+ */
 package itch
 
 import (

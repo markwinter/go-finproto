@@ -1,3 +1,6 @@
+/*
+ * Copyright (c) 2022 Mark Edward Winter
+ */
 package itch
 
 import (
@@ -162,7 +165,7 @@ func MakeStockDirectory(data []byte) Message {
 
 	StockMap[stock] = locate
 
-	Directory[locate] = StockDirectory{
+	sd := StockDirectory{
 		StockLocate:                 locate,
 		TrackingNumber:              tracking,
 		Timestamp:                   time.Duration(t),
@@ -182,7 +185,9 @@ func MakeStockDirectory(data []byte) Message {
 		InverseIndicator:            inverseIndicator,
 	}
 
-	return Directory[locate]
+	Directory[locate] = sd
+
+	return sd
 }
 
 func (e StockDirectory) String() string {
