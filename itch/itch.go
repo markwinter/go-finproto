@@ -1,3 +1,6 @@
+/*
+ * Copyright (c) 2022 Mark Edward Winter
+ */
 package itch
 
 import (
@@ -10,16 +13,12 @@ import (
 
 type Message interface{}
 
-func check(e error) {
-	if e != nil {
-		panic(e)
-	}
-}
-
 // ParseFile parses ITCH messages from an uncompressed file. It uses ParseReader internally
 func ParseFile(path string, config Configuration) ([]Message, error) {
 	file, err := os.Open(path)
-	check(err)
+	if err != nil {
+		return nil, err
+	}
 	defer file.Close()
 
 	return ParseReader(file, config)
@@ -70,6 +69,20 @@ func ParseReader(reader io.Reader, config Configuration) ([]Message, error) {
 			messages = append(messages, MakeStockDirectory(buffer))
 		case 'H':
 			messages = append(messages, MakeStockTradingAction(buffer))
+		case 'Y':
+			messages = append(messages, MakeRegSho(buffer))
+		case 'L':
+			messages = append(messages, MakeParticipantPosition(buffer))
+		case 'V':
+			messages = append(messages, MakeMcwbLevel(buffer))
+		case 'W':
+			messages = append(messages, MakeMcwbStatus(buffer))
+		case 'K':
+			messages = append(messages, MakeIpoQuotation(buffer))
+		case 'J':
+			messages = append(messages, MakeLuldCollar(buffer))
+		case 'h':
+			messages = append(messages, MakeOperationalHalt(buffer))
 		default:
 			continue
 		}
@@ -82,8 +95,8 @@ func ParseReader(reader io.Reader, config Configuration) ([]Message, error) {
 	return messages, nil
 }
 
-// ParseBytes parses ITCH messages from byte data already loaded into memory
-func ParseBytes(data []byte, config Configuration) ([]Message, error) {
+// ParseMany parses multiple ITCH messages from byte data already loaded into memory
+func ParseMany(data []byte, config Configuration) ([]Message, error) {
 	messages := []Message{}
 	messageCount := 0
 
@@ -124,6 +137,20 @@ func ParseBytes(data []byte, config Configuration) ([]Message, error) {
 			messages = append(messages, MakeStockDirectory(data[dp:dp+int(msgLength)]))
 		case 'H':
 			messages = append(messages, MakeStockTradingAction(data[dp:dp+int(msgLength)]))
+		case 'Y':
+			messages = append(messages, MakeRegSho(data[dp:dp+int(msgLength)]))
+		case 'L':
+			messages = append(messages, MakeParticipantPosition(data[dp:dp+int(msgLength)]))
+		case 'V':
+			messages = append(messages, MakeMcwbLevel(data[dp:dp+int(msgLength)]))
+		case 'W':
+			messages = append(messages, MakeMcwbStatus(data[dp:dp+int(msgLength)]))
+		case 'K':
+			messages = append(messages, MakeIpoQuotation(data[dp:dp+int(msgLength)]))
+		case 'J':
+			messages = append(messages, MakeLuldCollar(data[dp:dp+int(msgLength)]))
+		case 'h':
+			messages = append(messages, MakeOperationalHalt(data[dp:dp+int(msgLength)]))
 		default:
 			continue
 		}
