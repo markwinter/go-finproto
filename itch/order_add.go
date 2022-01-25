@@ -17,7 +17,7 @@ const (
 	ORDER_INDICATOR_SELL OrderIndicator = 'S'
 )
 
-type AddOrder struct {
+type OrderAdd struct {
 	StockLocate    uint16
 	TrackingNumber uint16
 	Timestamp      time.Duration
@@ -28,7 +28,7 @@ type AddOrder struct {
 	Price          uint32
 }
 
-type AddOrderAttributed struct {
+type OrderAddAttributed struct {
 	StockLocate    uint16
 	TrackingNumber uint16
 	Timestamp      time.Duration
@@ -40,14 +40,14 @@ type AddOrderAttributed struct {
 	Attribution    string
 }
 
-func MakeAddOrder(data []byte) Message {
+func MakeOrderAdd(data []byte) Message {
 	locate := binary.BigEndian.Uint16(data[1:3])
 	tracking := binary.BigEndian.Uint16(data[3:5])
 	data[3] = 0
 	data[4] = 0
 	t := binary.BigEndian.Uint64(data[3:11])
 
-	return AddOrder{
+	return OrderAdd{
 		StockLocate:    locate,
 		TrackingNumber: tracking,
 		Timestamp:      time.Duration(t),
@@ -59,14 +59,14 @@ func MakeAddOrder(data []byte) Message {
 	}
 }
 
-func MakeAddOrderAttributed(data []byte) Message {
+func MakeOrderAddAttributed(data []byte) Message {
 	locate := binary.BigEndian.Uint16(data[1:3])
 	tracking := binary.BigEndian.Uint16(data[3:5])
 	data[3] = 0
 	data[4] = 0
 	t := binary.BigEndian.Uint64(data[3:11])
 
-	return AddOrderAttributed{
+	return OrderAddAttributed{
 		StockLocate:    locate,
 		TrackingNumber: tracking,
 		Timestamp:      time.Duration(t),
@@ -79,8 +79,8 @@ func MakeAddOrderAttributed(data []byte) Message {
 	}
 }
 
-func (a AddOrder) String() string {
-	return fmt.Sprintf("[Add Order]\n"+
+func (a OrderAdd) String() string {
+	return fmt.Sprintf("[Order Add]\n"+
 		"Stock Locate: %v\n"+
 		"Tracking Number: %v\n"+
 		"Timestamp: %v\n"+
@@ -95,8 +95,8 @@ func (a AddOrder) String() string {
 	)
 }
 
-func (a AddOrderAttributed) String() string {
-	return fmt.Sprintf("[Add Order]\n"+
+func (a OrderAddAttributed) String() string {
+	return fmt.Sprintf("[Order Add Attributed]\n"+
 		"Stock Locate: %v\n"+
 		"Tracking Number: %v\n"+
 		"Timestamp: %v\n"+
