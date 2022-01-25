@@ -1,3 +1,6 @@
+/*
+ * Copyright (c) 2022 Mark Edward Winter
+ */
 package itch
 
 import (
@@ -77,7 +80,7 @@ func MakeAddOrderAttributed(data []byte) Message {
 }
 
 func (a AddOrder) String() string {
-	return fmt.Sprintf("[IPO Quotation]\n"+
+	return fmt.Sprintf("[Add Order]\n"+
 		"Stock Locate: %v\n"+
 		"Tracking Number: %v\n"+
 		"Timestamp: %v\n"+
@@ -93,7 +96,7 @@ func (a AddOrder) String() string {
 }
 
 func (a AddOrderAttributed) String() string {
-	return fmt.Sprintf("[IPO Quotation]\n"+
+	return fmt.Sprintf("[Add Order]\n"+
 		"Stock Locate: %v\n"+
 		"Tracking Number: %v\n"+
 		"Timestamp: %v\n"+
