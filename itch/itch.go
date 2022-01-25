@@ -153,6 +153,12 @@ func makeMessage(msgType byte, data []byte) Message {
 		return MakeOrderDelete(data)
 	case 'U':
 		return MakeOrderReplace(data)
+	case 'P':
+		return MakeTradeNonCross(data)
+	case 'Q':
+		return MakeTradeCross(data)
+	case 'B':
+		return MakeTradeBroken(data)
 	default:
 		return nil
 	}
