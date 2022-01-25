@@ -13,9 +13,10 @@ import (
 type CrossType uint8
 
 const (
-	CROSS_TYPE_NASDAQ_OPEN  CrossType = 'O'
-	CROSS_TYPE_NASDAQ_CLOSE CrossType = 'C'
-	CROSS_TYPE_IPO_HALTED   CrossType = 'H'
+	CROSS_TYPE_NASDAQ_OPEN            CrossType = 'O'
+	CROSS_TYPE_NASDAQ_CLOSE           CrossType = 'C'
+	CROSS_TYPE_IPO_HALTED             CrossType = 'H'
+	CROSS_TYPE_EXTENDED_TRADING_CLOSE CrossType = 'A'
 )
 
 type TradeCross struct {
