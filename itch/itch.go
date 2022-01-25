@@ -140,9 +140,9 @@ func makeMessage(msgType byte, data []byte) Message {
 	case 'h':
 		return MakeOperationalHalt(data)
 	case 'A':
-		return MakeAddOrder(data)
+		return MakeOrderAdd(data)
 	case 'F':
-		return MakeAddOrderAttributed(data)
+		return MakeOrderAddAttributed(data)
 	case 'E':
 		return MakeOrderExecuted(data)
 	case 'C':
@@ -159,6 +159,10 @@ func makeMessage(msgType byte, data []byte) Message {
 		return MakeTradeCross(data)
 	case 'B':
 		return MakeTradeBroken(data)
+	case 'I':
+		return MakeNoii(data)
+	case 'N':
+		return MakeRpii(data)
 	default:
 		return nil
 	}
