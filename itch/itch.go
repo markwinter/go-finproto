@@ -62,44 +62,7 @@ func ParseReader(reader io.Reader, config Configuration) ([]Message, error) {
 			}
 		}
 
-		switch buffer[0] {
-		case 'S':
-			messages = append(messages, MakeSystemEvent(buffer))
-		case 'R':
-			messages = append(messages, MakeStockDirectory(buffer))
-		case 'H':
-			messages = append(messages, MakeStockTradingAction(buffer))
-		case 'Y':
-			messages = append(messages, MakeRegSho(buffer))
-		case 'L':
-			messages = append(messages, MakeParticipantPosition(buffer))
-		case 'V':
-			messages = append(messages, MakeMcwbLevel(buffer))
-		case 'W':
-			messages = append(messages, MakeMcwbStatus(buffer))
-		case 'K':
-			messages = append(messages, MakeIpoQuotation(buffer))
-		case 'J':
-			messages = append(messages, MakeLuldCollar(buffer))
-		case 'h':
-			messages = append(messages, MakeOperationalHalt(buffer))
-		case 'A':
-			messages = append(messages, MakeAddOrder(buffer))
-		case 'F':
-			messages = append(messages, MakeAddOrderAttributed(buffer))
-		case 'E':
-			messages = append(messages, MakeOrderExecuted(buffer))
-		case 'C':
-			messages = append(messages, MakeOrderExecutedPrice(buffer))
-		case 'X':
-			messages = append(messages, MakeOrderCancel(buffer))
-		case 'D':
-			messages = append(messages, MakeOrderDelete(buffer))
-		case 'U':
-			messages = append(messages, MakeOrderReplace(buffer))
-		default:
-			continue
-		}
+		messages = append(messages, makeMessage(buffer[0], buffer))
 	}
 
 	elapsed := time.Since(start)
@@ -144,44 +107,7 @@ func ParseMany(data []byte, config Configuration) ([]Message, error) {
 			}
 		}
 
-		switch data[dp] {
-		case 'S':
-			messages = append(messages, MakeSystemEvent(data[dp:dp+int(msgLength)]))
-		case 'R':
-			messages = append(messages, MakeStockDirectory(data[dp:dp+int(msgLength)]))
-		case 'H':
-			messages = append(messages, MakeStockTradingAction(data[dp:dp+int(msgLength)]))
-		case 'Y':
-			messages = append(messages, MakeRegSho(data[dp:dp+int(msgLength)]))
-		case 'L':
-			messages = append(messages, MakeParticipantPosition(data[dp:dp+int(msgLength)]))
-		case 'V':
-			messages = append(messages, MakeMcwbLevel(data[dp:dp+int(msgLength)]))
-		case 'W':
-			messages = append(messages, MakeMcwbStatus(data[dp:dp+int(msgLength)]))
-		case 'K':
-			messages = append(messages, MakeIpoQuotation(data[dp:dp+int(msgLength)]))
-		case 'J':
-			messages = append(messages, MakeLuldCollar(data[dp:dp+int(msgLength)]))
-		case 'h':
-			messages = append(messages, MakeOperationalHalt(data[dp:dp+int(msgLength)]))
-		case 'A':
-			messages = append(messages, MakeAddOrder(data[dp:dp+int(msgLength)]))
-		case 'F':
-			messages = append(messages, MakeAddOrderAttributed(data[dp:dp+int(msgLength)]))
-		case 'E':
-			messages = append(messages, MakeOrderExecuted(data[dp:dp+int(msgLength)]))
-		case 'C':
-			messages = append(messages, MakeOrderExecutedPrice(data[dp:dp+int(msgLength)]))
-		case 'X':
-			messages = append(messages, MakeOrderCancel(data[dp:dp+int(msgLength)]))
-		case 'D':
-			messages = append(messages, MakeOrderDelete(data[dp:dp+int(msgLength)]))
-		case 'U':
-			messages = append(messages, MakeOrderReplace(data[dp:dp+int(msgLength)]))
-		default:
-			continue
-		}
+		messages = append(messages, makeMessage(data[dp], data[dp:dp+int(msgLength)]))
 	}
 
 	elapsed := time.Since(start)
@@ -189,6 +115,47 @@ func ParseMany(data []byte, config Configuration) ([]Message, error) {
 	log.Printf("Parse rate: %.2f messages/s", float64(messageCount)/elapsed.Seconds())
 
 	return messages, nil
+}
+
+func makeMessage(msgType byte, data []byte) Message {
+	switch msgType {
+	case 'S':
+		return MakeSystemEvent(data)
+	case 'R':
+		return MakeStockDirectory(data)
+	case 'H':
+		return MakeStockTradingAction(data)
+	case 'Y':
+		return MakeRegSho(data)
+	case 'L':
+		return MakeParticipantPosition(data)
+	case 'V':
+		return MakeMcwbLevel(data)
+	case 'W':
+		return MakeMcwbStatus(data)
+	case 'K':
+		return MakeIpoQuotation(data)
+	case 'J':
+		return MakeLuldCollar(data)
+	case 'h':
+		return MakeOperationalHalt(data)
+	case 'A':
+		return MakeAddOrder(data)
+	case 'F':
+		return MakeAddOrderAttributed(data)
+	case 'E':
+		return MakeOrderExecuted(data)
+	case 'C':
+		return MakeOrderExecutedPrice(data)
+	case 'X':
+		return MakeOrderCancel(data)
+	case 'D':
+		return MakeOrderDelete(data)
+	case 'U':
+		return MakeOrderReplace(data)
+	default:
+		return nil
+	}
 }
 
 func contains(l []byte, x byte) bool {
