@@ -87,6 +87,10 @@ func ParseReader(reader io.Reader, config Configuration) ([]Message, error) {
 			messages = append(messages, MakeAddOrder(buffer))
 		case 'F':
 			messages = append(messages, MakeAddOrderAttributed(buffer))
+		case 'E':
+			messages = append(messages, MakeOrderExecuted(buffer))
+		case 'C':
+			messages = append(messages, MakeOrderExecutedPrice(buffer))
 		default:
 			continue
 		}
@@ -159,6 +163,10 @@ func ParseMany(data []byte, config Configuration) ([]Message, error) {
 			messages = append(messages, MakeAddOrder(data[dp:dp+int(msgLength)]))
 		case 'F':
 			messages = append(messages, MakeAddOrderAttributed(data[dp:dp+int(msgLength)]))
+		case 'E':
+			messages = append(messages, MakeOrderExecuted(data[dp:dp+int(msgLength)]))
+		case 'C':
+			messages = append(messages, MakeOrderExecutedPrice(data[dp:dp+int(msgLength)]))
 		default:
 			continue
 		}
