@@ -49,7 +49,7 @@ func MakeOperationalHalt(data []byte) Message {
 }
 
 func (h OperationalHalt) String() string {
-	return fmt.Sprintf("[IPO Quotation]\n"+
+	return fmt.Sprintf("[Operational Halt]\n"+
 		"Stock Locate: %v\n"+
 		"Tracking Number: %v\n"+
 		"Timestamp: %v\n"+

@@ -32,7 +32,7 @@ func MakeTradeBroken(data []byte) Message {
 }
 
 func (o TradeBroken) String() string {
-	return fmt.Sprintf("[Trade Cross]\n"+
+	return fmt.Sprintf("[Trade Broken]\n"+
 		"Stock Locate: %v\n"+
 		"Tracking Number: %v\n"+
 		"Timestamp: %v\n"+

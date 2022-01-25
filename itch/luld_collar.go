@@ -41,7 +41,7 @@ func MakeLuldCollar(data []byte) Message {
 }
 
 func (l LuldCollar) String() string {
-	return fmt.Sprintf("[IPO Quotation]\n"+
+	return fmt.Sprintf("[LULD Collar]\n"+
 		"Stock Locate: %v\n"+
 		"Tracking Number: %v\n"+
 		"Timestamp: %v\n"+
