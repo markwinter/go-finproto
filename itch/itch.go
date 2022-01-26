@@ -1,6 +1,8 @@
 /*
  * Copyright (c) 2022 Mark Edward Winter
  */
+
+// Package itch implements the Nasdaq ITCH 5.0 protocol
 package itch
 
 import (
