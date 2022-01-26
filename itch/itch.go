@@ -4,7 +4,7 @@
 package itch
 
 import (
-	"encoding/binary"
+	"bufio"
 	"io"
 	"log"
 	"os"
@@ -21,15 +21,23 @@ func ParseFile(path string, config Configuration) ([]Message, error) {
 	}
 	defer file.Close()
 
-	return ParseReader(file, config)
+	var reader *bufio.Reader
+	if config.ReadBufferSize > 0 {
+		reader = bufio.NewReaderSize(file, int(config.ReadBufferSize))
+	} else {
+		reader = bufio.NewReader(file)
+	}
+
+	log.Printf("Using buffer size: %v", reader.Size())
+	log.Printf("Buffer size: %v", reader.Buffered())
+
+	return ParseReader(reader, config)
 }
 
-// ParseReader parses ITCH messages from an io.Reader
-func ParseReader(reader io.Reader, config Configuration) ([]Message, error) {
+// ParseReader parses ITCH messages from a bufio.Reader
+func ParseReader(reader *bufio.Reader, config Configuration) ([]Message, error) {
 	messages := []Message{}
 	messageCount := 0
-
-	var msgLength uint16
 
 	start := time.Now()
 
@@ -38,31 +46,36 @@ func ParseReader(reader io.Reader, config Configuration) ([]Message, error) {
 			break
 		}
 
-		err := binary.Read(reader, binary.BigEndian, &msgLength)
+		msgLengthBuffer, err := reader.Peek(2)
+		if err == io.EOF {
+			break
+		}
 		if err != nil {
-			// Reached the end of data
-			if err == io.ErrUnexpectedEOF || err == io.EOF {
-				break
-			}
 			return messages, err
 		}
+		reader.Discard(2)
 
-		buffer := make([]byte, msgLength)
-		_, err = reader.Read(buffer)
+		msgLength := uint16(msgLengthBuffer[1]) | uint16(msgLengthBuffer[0])<<8
+
+		data, err := reader.Peek(int(msgLength))
+		if err == io.EOF {
+			break
+		}
 		if err != nil {
 			return messages, err
 		}
+		reader.Discard(int(msgLength))
 
 		messageCount++
 
 		// If user configured MessageTypes then only parse messages they want
 		if len(config.MessageTypes) != 0 {
-			if !contains(config.MessageTypes, buffer[0]) {
+			if !contains(config.MessageTypes, data[0]) {
 				continue
 			}
 		}
 
-		messages = append(messages, makeMessage(buffer[0], buffer))
+		messages = append(messages, makeMessage(data[0], data))
 	}
 
 	elapsed := time.Since(start)
@@ -77,10 +90,9 @@ func ParseMany(data []byte, config Configuration) ([]Message, error) {
 	messages := []Message{}
 	messageCount := 0
 
-	msgLength := uint16(0)
-
 	start := time.Now()
 
+	msgLength := uint16(0)
 	dp := 0
 
 	for {
@@ -115,6 +127,11 @@ func ParseMany(data []byte, config Configuration) ([]Message, error) {
 	log.Printf("Parse rate: %.2f messages/s", float64(messageCount)/elapsed.Seconds())
 
 	return messages, nil
+}
+
+// Parse will parse a single ITCH message
+func Parse(data []byte) Message {
+	return makeMessage(data[2], data)
 }
 
 func makeMessage(msgType byte, data []byte) Message {
