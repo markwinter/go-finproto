@@ -71,7 +71,7 @@ func MakeParticipantPosition(data []byte) Message {
 	return pp
 }
 
-func (p *ParticipantPosition) String() string {
+func (p ParticipantPosition) String() string {
 	return fmt.Sprintf("[Market Participant Position]\n"+
 		"Stock Locate: %v\n"+
 		"Tracking Number: %v\n"+
