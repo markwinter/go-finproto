@@ -100,7 +100,7 @@ func (m MMMode) String() string {
 		return "Penalty"
 	}
 
-	return "Unkown MMMode"
+	return "Unknown MMMode"
 }
 
 func (m MMState) String() string {

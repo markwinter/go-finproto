@@ -328,7 +328,7 @@ func (i IssueSubType) String() string {
 	case ICS_COMMODITY_INDEX_TRUST_SHARES:
 		return "Commodity Index Trust Shares"
 	case ICS_COLLATERALIZED_MORTGAGE_OBLIGATION:
-		return "Collateralized Mortage Obligation"
+		return "Collateralized Mortgage Obligation"
 	case ICS_CURRENCY_TRUST_SHARES:
 		return "Currency Trust Shares"
 	case ICS_COMMODITY_CURRENCY_LINKED_SECURITIES:
@@ -428,7 +428,7 @@ func (i IssueSubType) String() string {
 	case ICS_NOT_APPLICABLE:
 		return "Not Applicable"
 	}
-	return "Unkown Issue-Sub Type"
+	return "Unknown Issue-Sub Type"
 }
 
 func (a Authenticity) String() string {
@@ -439,5 +439,5 @@ func (a Authenticity) String() string {
 		return "Test"
 	}
 
-	return "Unkown Authenticity"
+	return "Unknown Authenticity"
 }
