@@ -13,6 +13,31 @@ import (
 	"time"
 )
 
+const (
+	MESSAGE_SYSTEM_EVENT         uint8 = 'S'
+	MESSAGE_STOCK_DIRECTORY      uint8 = 'R'
+	MESSAGE_STOCK_TRADING_ACTION uint8 = 'H'
+	MESSAGE_REG_SHO              uint8 = 'Y'
+	MESSAGE_PARTICIPANT_POSITION uint8 = 'L'
+	MESSAGE_MCWB_LEVEL           uint8 = 'V'
+	MESSAGE_MCWB_STATUS          uint8 = 'W'
+	MESSAGE_IPO_QUOTATION        uint8 = 'K'
+	MESSAGE_LULD_COLLAR          uint8 = 'J'
+	MESSAGE_OPERATIONAL_HALT     uint8 = 'h'
+	MESSAGE_ORDER_ADD            uint8 = 'A'
+	MESSAGE_ORDER_ADD_ATTRIBUTED uint8 = 'F'
+	MESSAGE_ORDER_EXECUTED       uint8 = 'E'
+	MESSAGE_ORDER_EXECUTED_PRICE uint8 = 'C'
+	MESSAGE_ORDER_CANCEL         uint8 = 'X'
+	MESSAGE_ORDER_DELETE         uint8 = 'D'
+	MESSAGE_ORDER_REPLACE        uint8 = 'U'
+	MESSAGE_TRADE_NON_CROSS      uint8 = 'P'
+	MESSAGE_TRADE_CROSS          uint8 = 'Q'
+	MESSAGE_TRADE_BROKEN         uint8 = 'B'
+	MESSAGE_NOII                 uint8 = 'I'
+	MESSAGE_RPII                 uint8 = 'N'
+)
+
 type Message interface{}
 
 // ParseFile parses ITCH messages from an uncompressed file. It uses ParseReader internally
@@ -137,49 +162,49 @@ func Parse(data []byte) Message {
 
 func makeMessage(msgType byte, data []byte) Message {
 	switch msgType {
-	case 'S':
+	case MESSAGE_SYSTEM_EVENT:
 		return MakeSystemEvent(data)
-	case 'R':
+	case MESSAGE_STOCK_DIRECTORY:
 		return MakeStockDirectory(data)
-	case 'H':
+	case MESSAGE_STOCK_TRADING_ACTION:
 		return MakeStockTradingAction(data)
-	case 'Y':
+	case MESSAGE_REG_SHO:
 		return MakeRegSho(data)
-	case 'L':
+	case MESSAGE_PARTICIPANT_POSITION:
 		return MakeParticipantPosition(data)
-	case 'V':
+	case MESSAGE_MCWB_LEVEL:
 		return MakeMcwbLevel(data)
-	case 'W':
+	case MESSAGE_MCWB_STATUS:
 		return MakeMcwbStatus(data)
-	case 'K':
+	case MESSAGE_IPO_QUOTATION:
 		return MakeIpoQuotation(data)
-	case 'J':
+	case MESSAGE_LULD_COLLAR:
 		return MakeLuldCollar(data)
-	case 'h':
+	case MESSAGE_OPERATIONAL_HALT:
 		return MakeOperationalHalt(data)
-	case 'A':
+	case MESSAGE_ORDER_ADD:
 		return MakeOrderAdd(data)
-	case 'F':
+	case MESSAGE_ORDER_ADD_ATTRIBUTED:
 		return MakeOrderAddAttributed(data)
-	case 'E':
+	case MESSAGE_ORDER_EXECUTED:
 		return MakeOrderExecuted(data)
-	case 'C':
+	case MESSAGE_ORDER_EXECUTED_PRICE:
 		return MakeOrderExecutedPrice(data)
-	case 'X':
+	case MESSAGE_ORDER_CANCEL:
 		return MakeOrderCancel(data)
-	case 'D':
+	case MESSAGE_ORDER_DELETE:
 		return MakeOrderDelete(data)
-	case 'U':
+	case MESSAGE_ORDER_REPLACE:
 		return MakeOrderReplace(data)
-	case 'P':
+	case MESSAGE_TRADE_NON_CROSS:
 		return MakeTradeNonCross(data)
-	case 'Q':
+	case MESSAGE_TRADE_CROSS:
 		return MakeTradeCross(data)
-	case 'B':
+	case MESSAGE_TRADE_BROKEN:
 		return MakeTradeBroken(data)
-	case 'I':
+	case MESSAGE_NOII:
 		return MakeNoii(data)
-	case 'N':
+	case MESSAGE_RPII:
 		return MakeRpii(data)
 	default:
 		return nil

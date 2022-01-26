@@ -17,7 +17,10 @@ func main() {
 	flag.Parse()
 
 	config := itch.Configuration{
-		MessageTypes:   []byte{'R', 'L'},
+		MessageTypes: []byte{
+			itch.MESSAGE_STOCK_DIRECTORY,
+			itch.MESSAGE_PARTICIPANT_POSITION,
+		},
 		MaxMessages:    0,
 		ReadBufferSize: itch.OneGB,
 	}
