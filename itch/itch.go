@@ -31,7 +31,6 @@ func ParseFile(path string, config Configuration) ([]Message, error) {
 	}
 
 	log.Printf("Using buffer size: %v", reader.Size())
-	log.Printf("Buffer size: %v", reader.Buffered())
 
 	return ParseReader(reader, config)
 }
