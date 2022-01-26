@@ -10,21 +10,21 @@ import (
 	"time"
 )
 
-type McwbStatus struct {
+type MwcbStatus struct {
 	StockLocate    uint16
 	TrackingNumber uint16
 	Timestamp      time.Duration
 	BreachedLevel  uint8
 }
 
-func MakeMcwbStatus(data []byte) Message {
+func MakeMwcbStatus(data []byte) Message {
 	locate := binary.BigEndian.Uint16(data[1:3])
 	tracking := binary.BigEndian.Uint16(data[3:5])
 	data[3] = 0
 	data[4] = 0
 	t := binary.BigEndian.Uint64(data[3:11])
 
-	return McwbStatus{
+	return MwcbStatus{
 		StockLocate:    locate,
 		TrackingNumber: tracking,
 		Timestamp:      time.Duration(t),
@@ -32,7 +32,7 @@ func MakeMcwbStatus(data []byte) Message {
 	}
 }
 
-func (l McwbStatus) String() string {
+func (l MwcbStatus) String() string {
 	return fmt.Sprintf("[MWCB Status]\n"+
 		"Stock Locate: %v\n"+
 		"Tracking Number: %v\n"+

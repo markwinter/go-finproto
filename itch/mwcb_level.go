@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-type McwbLevel struct {
+type MwcbLevel struct {
 	StockLocate    uint16
 	TrackingNumber uint16
 	Timestamp      time.Duration
@@ -19,14 +19,14 @@ type McwbLevel struct {
 	LevelThree     uint64
 }
 
-func MakeMcwbLevel(data []byte) Message {
+func MakeMwcbLevel(data []byte) Message {
 	locate := binary.BigEndian.Uint16(data[1:3])
 	tracking := binary.BigEndian.Uint16(data[3:5])
 	data[3] = 0
 	data[4] = 0
 	t := binary.BigEndian.Uint64(data[3:11])
 
-	return McwbLevel{
+	return MwcbLevel{
 		StockLocate:    locate,
 		TrackingNumber: tracking,
 		Timestamp:      time.Duration(t),
@@ -36,7 +36,7 @@ func MakeMcwbLevel(data []byte) Message {
 	}
 }
 
-func (l McwbLevel) String() string {
+func (l MwcbLevel) String() string {
 	return fmt.Sprintf("[MWCB Levels]\n"+
 		"Stock Locate: %v\n"+
 		"Tracking Number: %v\n"+

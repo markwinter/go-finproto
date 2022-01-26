@@ -19,8 +19,8 @@ const (
 	MESSAGE_STOCK_TRADING_ACTION uint8 = 'H'
 	MESSAGE_REG_SHO              uint8 = 'Y'
 	MESSAGE_PARTICIPANT_POSITION uint8 = 'L'
-	MESSAGE_MCWB_LEVEL           uint8 = 'V'
-	MESSAGE_MCWB_STATUS          uint8 = 'W'
+	MESSAGE_MWCB_LEVEL           uint8 = 'V'
+	MESSAGE_MWCB_STATUS          uint8 = 'W'
 	MESSAGE_IPO_QUOTATION        uint8 = 'K'
 	MESSAGE_LULD_COLLAR          uint8 = 'J'
 	MESSAGE_OPERATIONAL_HALT     uint8 = 'h'
@@ -172,10 +172,10 @@ func makeMessage(msgType byte, data []byte) Message {
 		return MakeRegSho(data)
 	case MESSAGE_PARTICIPANT_POSITION:
 		return MakeParticipantPosition(data)
-	case MESSAGE_MCWB_LEVEL:
-		return MakeMcwbLevel(data)
-	case MESSAGE_MCWB_STATUS:
-		return MakeMcwbStatus(data)
+	case MESSAGE_MWCB_LEVEL:
+		return MakeMwcbLevel(data)
+	case MESSAGE_MWCB_STATUS:
+		return MakeMwcbStatus(data)
 	case MESSAGE_IPO_QUOTATION:
 		return MakeIpoQuotation(data)
 	case MESSAGE_LULD_COLLAR:
