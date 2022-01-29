@@ -33,11 +33,11 @@ const (
 )
 
 type ParticipantPosition struct {
-	StockLocate    uint16
-	TrackingNumber uint16
 	Timestamp      time.Duration
 	Mpid           string
 	Stock          string
+	StockLocate    uint16
+	TrackingNumber uint16
 	PrimaryMM      bool
 	Mode           MMMode
 	State          MMState

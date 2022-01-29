@@ -21,13 +21,13 @@ const (
 )
 
 type StockTradingAction struct {
+	Stock          string
+	Reason         string
+	Timestamp      time.Duration
 	StockLocate    uint16
 	TrackingNumber uint16
-	Timestamp      time.Duration
-	Stock          string
 	TradingState   TradingState
 	Reserved       uint8
-	Reason         string
 }
 
 func MakeStockTradingAction(data []byte) Message {

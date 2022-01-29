@@ -21,10 +21,10 @@ const (
 )
 
 type Rpii struct {
+	Stock          string
+	Timestamp      time.Duration
 	StockLocate    uint16
 	TrackingNumber uint16
-	Timestamp      time.Duration
-	Stock          string
 	InterestFlag   RpiInterestFlag
 }
 

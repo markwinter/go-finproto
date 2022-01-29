@@ -19,26 +19,26 @@ const (
 )
 
 type OrderAdd struct {
-	StockLocate    uint16
-	TrackingNumber uint16
+	Stock          string
 	Timestamp      time.Duration
 	Reference      uint64
-	OrderIndicator OrderIndicator
 	Shares         uint32
-	Stock          string
 	Price          uint32
+	StockLocate    uint16
+	TrackingNumber uint16
+	OrderIndicator OrderIndicator
 }
 
 type OrderAddAttributed struct {
-	StockLocate    uint16
-	TrackingNumber uint16
+	Stock          string
+	Attribution    string
 	Timestamp      time.Duration
 	Reference      uint64
-	OrderIndicator OrderIndicator
 	Shares         uint32
-	Stock          string
 	Price          uint32
-	Attribution    string
+	StockLocate    uint16
+	TrackingNumber uint16
+	OrderIndicator OrderIndicator
 }
 
 func MakeOrderAdd(data []byte) Message {

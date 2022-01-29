@@ -12,15 +12,15 @@ import (
 )
 
 type TradeNonCross struct {
-	StockLocate    uint16
-	TrackingNumber uint16
+	Stock          string
 	Timestamp      time.Duration
 	Reference      uint64
-	OrderIndicator OrderIndicator
-	Shares         uint32
-	Stock          string
-	Price          uint32
 	MatchNumber    uint64
+	Shares         uint32
+	Price          uint32
+	StockLocate    uint16
+	TrackingNumber uint16
+	OrderIndicator OrderIndicator
 }
 
 func MakeTradeNonCross(data []byte) Message {

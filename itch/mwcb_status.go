@@ -11,9 +11,9 @@ import (
 )
 
 type MwcbStatus struct {
+	Timestamp      time.Duration
 	StockLocate    uint16
 	TrackingNumber uint16
-	Timestamp      time.Duration
 	BreachedLevel  uint8
 }
 

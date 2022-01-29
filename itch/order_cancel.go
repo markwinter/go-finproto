@@ -11,11 +11,11 @@ import (
 )
 
 type OrderCancel struct {
-	StockLocate    uint16
-	TrackingNumber uint16
 	Timestamp      time.Duration
 	Reference      uint64
 	Shares         uint32
+	StockLocate    uint16
+	TrackingNumber uint16
 }
 
 func MakeOrderCancel(data []byte) Message {

@@ -21,16 +21,16 @@ const (
 )
 
 type Noii struct {
-	StockLocate        uint16
-	TrackingNumber     uint16
+	Stock              string
 	Timestamp          time.Duration
 	PairedShares       uint64
 	ImbalanceShares    uint64
-	ImbalanceDirection ImbalanceDirection
-	Stock              string
 	FarPrice           uint32
 	NearPrice          uint32
 	CurrentPrice       uint32
+	StockLocate        uint16
+	TrackingNumber     uint16
+	ImbalanceDirection ImbalanceDirection
 	CrossType          CrossType
 	VariationIndicator uint8
 }

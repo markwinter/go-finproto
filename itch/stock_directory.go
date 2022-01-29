@@ -126,23 +126,23 @@ const (
 )
 
 type StockDirectory struct {
-	StockLocate                 uint16
-	TrackingNumber              uint16
 	Timestamp                   time.Duration
 	Stock                       string
-	MarketCategory              MarketCategory
-	FinancialStatusIndicator    FinancialStatusIndicator
+	StockLocate                 uint16
+	TrackingNumber              uint16
 	RoundLotSize                uint32
-	RoundLotsOnly               bool
-	IssueClassification         IssueClassification
 	IssueSubType                IssueSubType
+	IssueClassification         IssueClassification
+	InverseIndicator            bool
+	RoundLotsOnly               bool
 	Authenticity                Authenticity
+	EtpLeverageFactor           uint32
 	ShortSaleThresholdIndicator string
 	IpoFlag                     string
 	LuldReferencePriceTier      string
 	EtpFlag                     string
-	EtpLeverageFactor           uint32
-	InverseIndicator            bool
+	MarketCategory              MarketCategory
+	FinancialStatusIndicator    FinancialStatusIndicator
 }
 
 func MakeStockDirectory(data []byte) Message {

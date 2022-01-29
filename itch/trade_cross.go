@@ -21,13 +21,13 @@ const (
 )
 
 type TradeCross struct {
+	Stock          string
+	Timestamp      time.Duration
+	MatchNumber    uint64
+	Shares         uint32
+	CrossPrice     uint32
 	StockLocate    uint16
 	TrackingNumber uint16
-	Timestamp      time.Duration
-	Shares         uint32
-	Stock          string
-	CrossPrice     uint32
-	MatchNumber    uint64
 	CrossType      CrossType
 }
 

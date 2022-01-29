@@ -20,10 +20,10 @@ const (
 )
 
 type RegSho struct {
+	Stock          string
+	Timestamp      time.Duration
 	StockLocate    uint16
 	TrackingNumber uint16
-	Timestamp      time.Duration
-	Stock          string
 	Action         RegShoAction
 }
 

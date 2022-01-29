@@ -11,23 +11,23 @@ import (
 )
 
 type OrderExecuted struct {
-	StockLocate    uint16
-	TrackingNumber uint16
 	Timestamp      time.Duration
 	Reference      uint64
-	Shares         uint32
 	MatchNumber    uint64
+	Shares         uint32
+	StockLocate    uint16
+	TrackingNumber uint16
 }
 
 type OrderExecutedPrice struct {
-	StockLocate    uint16
-	TrackingNumber uint16
 	Timestamp      time.Duration
 	Reference      uint64
-	Shares         uint32
 	MatchNumber    uint64
-	Printable      bool
+	Shares         uint32
 	ExecutionPrice uint32
+	StockLocate    uint16
+	TrackingNumber uint16
+	Printable      bool
 }
 
 func MakeOrderExecuted(data []byte) Message {

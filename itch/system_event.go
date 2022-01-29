@@ -11,9 +11,9 @@ import (
 )
 
 type SystemEvent struct {
+	Timestamp      time.Duration
 	StockLocate    uint16
 	TrackingNumber uint16
-	Timestamp      time.Duration
 	EventCode      EventCode
 }
 
