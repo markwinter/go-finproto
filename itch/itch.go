@@ -36,6 +36,33 @@ const (
 	MESSAGE_TRADE_BROKEN         uint8 = 'B'
 	MESSAGE_NOII                 uint8 = 'I'
 	MESSAGE_RPII                 uint8 = 'N'
+
+	/*
+		// Message lengths are fixed sized.
+		// Can probably be used later to increase performance slightly
+		systemEventSize         = 12
+		stockDirectorySize      = 39
+		stockTradingActionSize  = 25
+		regShoSize              = 20
+		participantPositionSize = 26
+		mwcbLevelSize           = 35
+		mwcbStatusSize          = 12
+		ipoQuotationSize        = 28
+		luldSize                = 35
+		operationalHaltSize     = 21
+		orderAddSize            = 36
+		orderAddAttrSize        = 40
+		orderModifySize         = 31
+		orderExecutedSize       = 36
+		orderCancleSize         = 23
+		orderDeleteSize         = 19
+		orderReplaceSize        = 35
+		tradeNonCrossSize       = 44
+		tradeCrossSize          = 40
+		brokenTradeSize         = 19
+		noiiSize                = 50
+		rpiiSize                = 20
+	*/
 )
 
 type Message interface{}
@@ -79,7 +106,10 @@ func ParseReader(reader *bufio.Reader, config Configuration) ([]Message, error) 
 		if err != nil {
 			return messages, err
 		}
-		reader.Discard(2)
+		_, err = reader.Discard(2)
+		if err != nil {
+			return messages, err
+		}
 
 		msgLength := uint16(msgLengthBuffer[1]) | uint16(msgLengthBuffer[0])<<8
 
@@ -90,7 +120,10 @@ func ParseReader(reader *bufio.Reader, config Configuration) ([]Message, error) 
 		if err != nil {
 			return messages, err
 		}
-		reader.Discard(int(msgLength))
+		_, err = reader.Discard(int(msgLength))
+		if err != nil {
+			return messages, err
+		}
 
 		messageCount++
 
@@ -101,7 +134,7 @@ func ParseReader(reader *bufio.Reader, config Configuration) ([]Message, error) 
 			}
 		}
 
-		messages = append(messages, makeMessage(data[0], data))
+		messages = append(messages, parseData(data[0], data))
 	}
 
 	elapsed := time.Since(start)
@@ -145,7 +178,7 @@ func ParseMany(data []byte, config Configuration) ([]Message, error) {
 			}
 		}
 
-		messages = append(messages, makeMessage(data[dp], data[dp:dp+int(msgLength)]))
+		messages = append(messages, parseData(data[dp], data[dp:dp+int(msgLength)]))
 	}
 
 	elapsed := time.Since(start)
@@ -157,10 +190,10 @@ func ParseMany(data []byte, config Configuration) ([]Message, error) {
 
 // Parse will parse a single ITCH message
 func Parse(data []byte) Message {
-	return makeMessage(data[2], data)
+	return parseData(data[2], data)
 }
 
-func makeMessage(msgType byte, data []byte) Message {
+func parseData(msgType byte, data []byte) Message {
 	switch msgType {
 	case MESSAGE_SYSTEM_EVENT:
 		return MakeSystemEvent(data)
