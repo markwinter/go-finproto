@@ -6,13 +6,14 @@
 
 go-finproto is a collection of finance-related protocols implemented in Golang.
 
+Protocols are contained within top level packages in this repo, and examples of each protocol can be found in the `cmd` directory.
+
 ## Protocols
 
 ### Nasdaq ITCH 5.0
 
 The `itch` directory contains an implementation of Nasdaq's ITCH 5.0 protocol.
 
-## Roadmap
+### Nasdaq SoupBinTCP 4.1
 
--  Add more helpful functions to Nasdaq itch package e.g. get trades by stock symbol
--  Implement SoupBinTCP
+The `soupbintcp` directory contains an implementation of Nasdaq's SoupBinTCP 4.1 protocol.
