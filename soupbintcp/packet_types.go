@@ -10,6 +10,10 @@ type DebugPacket struct {
 	Text string
 }
 
+type HeartbeatPacket struct {
+	Packet
+}
+
 type LoginAcceptedPacket struct {
 	Packet
 	Session        [10]byte

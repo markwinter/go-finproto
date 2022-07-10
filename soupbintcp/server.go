@@ -13,9 +13,11 @@ import (
 )
 
 type Server struct {
-	activeConns    sync.Map
-	sequenceNumber uint64
-	session        string
+	activeConns       sync.Map
+	sequenceNumber    uint64
+	session           string
+	heartbeatTicker   *time.Ticker
+	heartbeatStopChan chan bool
 }
 
 func (s *Server) ListenAndServe(addr string) {
@@ -28,6 +30,8 @@ func (s *Server) ListenAndServe(addr string) {
 
 	s.sequenceNumber = 1
 	s.session = "abcdefghij"
+
+	go s.runHeartbeat()
 
 	for {
 		conn, err := l.Accept()
@@ -46,18 +50,53 @@ func (s *Server) closeConn(conn net.Conn) {
 	conn.Close()
 }
 
+func (s *Server) sendHeartbeat() {
+	request := HeartbeatPacket{
+		Packet: Packet{
+			Length: [2]byte{0, 3},
+			Type:   'H',
+		},
+	}
+
+	s.activeConns.Range(func(key, conn any) bool {
+		binary.Write(conn.(net.Conn), binary.BigEndian, &request)
+		return true
+	})
+}
+
+func (s *Server) runHeartbeat() {
+	s.heartbeatTicker = time.NewTicker(heartbeatPeriod * time.Millisecond)
+	s.heartbeatStopChan = make(chan bool)
+
+	for {
+		select {
+		case <-s.heartbeatTicker.C:
+			s.sendHeartbeat()
+		case <-s.heartbeatStopChan:
+			return
+		}
+	}
+}
+
 func (s *Server) handle(conn net.Conn) {
 	remoteAddr := conn.RemoteAddr().String()
 	s.activeConns.Store(remoteAddr, conn)
 
 	for {
+		// We give a grace period of 2 * heartbeatPeriod to read something from the client
+		// The client should be sending heartbeats every 1 * heartbeatPeriod
+		conn.SetReadDeadline(time.Now().Add(heartbeatPeriod * time.Millisecond * 2))
+
 		packet, err := GetNextPacket(conn)
 		if err != nil {
+			s.closeConn(conn)
 			log.Print(err)
 			return
 		}
 
 		switch packet[2] {
+		case '+':
+			handleDebugPacket(packet)
 		case 'L':
 			log.Printf("Login received from %s", conn.RemoteAddr().String())
 			s.handleLogin(conn, packet)
@@ -65,6 +104,8 @@ func (s *Server) handle(conn net.Conn) {
 			log.Printf("Logout received from %s", conn.RemoteAddr().String())
 			s.handleLogout(conn)
 			return
+		case 'R':
+			log.Printf("Received heartbeat from: %s", conn.RemoteAddr().String())
 		}
 	}
 }
@@ -116,6 +157,8 @@ func (s *Server) sendLoginAccepted(conn net.Conn) {
 	log.Print(request)
 
 	binary.Write(conn, binary.BigEndian, &request)
+
+	sendDebugPacket("this is a test packet", conn)
 }
 
 func (s *Server) sendLoginRejected(conn net.Conn, reason byte) {
