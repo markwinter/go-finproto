@@ -2,13 +2,18 @@ package soupbintcp
 
 import (
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"log"
 	"net"
+	"strconv"
+	"strings"
 )
 
 type Client struct {
-	conn net.Conn
+	conn           net.Conn
+	sequenceNumber int
+	session        string
 }
 
 func (c *Client) Connect(addr string) {
@@ -23,53 +28,63 @@ func (c *Client) Disconnect() {
 	c.conn.Close()
 }
 
-func (c *Client) Login(username, password string) {
-	username = fmt.Sprintf("%6s", username)
-	password = fmt.Sprintf("%10s", password)
+func (c *Client) Login(username, password string) error {
+	username = fmt.Sprintf("%-6s", username)
+	password = fmt.Sprintf("%-10s", password)
 
 	request := LoginRequestPacket{
-		Type: 'L',
+		Packet: Packet{
+			Length: [2]byte{0, 52},
+			Type:   'L',
+		},
 	}
-
-	buf := make([]byte, 2)
-	binary.BigEndian.PutUint16(buf, 52)
-	copy(request.Length[:], buf)
 
 	copy(request.Username[:], username)
 	copy(request.Password[:], password)
 	copy(request.HeartbeatTimeout[:], "1000")
 	copy(request.SequenceNumber[:], "1")
-
-	log.Print(request)
+	copy(request.Session[:], "          ")
 
 	binary.Write(c.conn, binary.BigEndian, &request)
+
+	packet, err := GetNextPacket(c.conn)
+	if err != nil {
+		return err
+	}
+
+	switch packet[2] {
+	case 'A':
+		c.handleLoginAccepted(packet)
+	case 'J':
+		switch packet[3] {
+		case 'A':
+			return errors.New("not authorized")
+		case 'S':
+			return errors.New("session not available")
+		}
+	}
+
+	return nil
 }
 
 func (c *Client) Logout() {
 	request := LogoutRequestPacket{
-		Type: 'O',
+		Packet: Packet{
+			Length: [2]byte{0, 1},
+			Type:   'O',
+		},
 	}
-
-	buf := make([]byte, 2)
-	binary.BigEndian.PutUint16(buf, 1)
-	copy(request.Length[:], buf)
-
-	log.Print(request)
 
 	binary.Write(c.conn, binary.BigEndian, &request)
 }
 
-type LoginRequestPacket struct {
-	Length           [2]byte
-	Type             byte
-	Username         [6]byte
-	Password         [10]byte
-	Session          [10]byte
-	SequenceNumber   [20]byte
-	HeartbeatTimeout [5]byte
-}
+func (c *Client) handleLoginAccepted(packet []byte) {
+	c.session = strings.TrimSpace(string(packet[3:13]))
 
-type LogoutRequestPacket struct {
-	Length [2]byte
-	Type   byte
+	sq := strings.TrimSpace(string(packet[13:33]))
+	seq, err := strconv.Atoi(sq)
+	if err != nil {
+		log.Print(err)
+	}
+	c.sequenceNumber = seq
 }
