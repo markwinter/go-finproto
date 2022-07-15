@@ -12,8 +12,8 @@ Protocols are contained within top level packages in this repo, and examples of 
 
 ### Nasdaq ITCH 5.0
 
-The `itch` directory contains an implementation of Nasdaq's ITCH 5.0 protocol.
+The `itch` directory contains a parser for Nasdaq's ITCH 5.0 protocol.
 
 ### Nasdaq SoupBinTCP 4.1
 
-The `soupbintcp` directory contains an implementation of Nasdaq's SoupBinTCP 4.1 protocol.
+The `soupbintcp` directory contains a server and client implementation of Nasdaq's SoupBinTCP 4.1 protocol.
