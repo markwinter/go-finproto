@@ -27,6 +27,7 @@ type Client struct {
 	heartbeatStopChan chan bool
 }
 
+// Connect to the Server. You must call Login or LoginSession immediately after this
 func (c *Client) Connect() {
 	conn, err := net.Dial("tcp", c.ServerAddr)
 	if err != nil {
@@ -35,6 +36,7 @@ func (c *Client) Connect() {
 	c.conn = conn
 }
 
+// Disconnect from the Server
 func (c *Client) Disconnect() {
 	c.conn.Close()
 }
@@ -125,6 +127,7 @@ func (c *Client) LoginSession(session, sequence string) error {
 	return nil
 }
 
+// Logout from the Server
 func (c *Client) Logout() {
 	request := LogoutRequestPacket{
 		Packet: Packet{
