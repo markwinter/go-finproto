@@ -175,7 +175,7 @@ func (c *Client) Receive() {
 
 		packet, err := GetNextPacket(c.conn)
 		if err != nil {
-			// Try to reconnect and rejoin previous session with current sequqnceNumber
+			// Try to reconnect and rejoin previous session with current sequenceNumber
 			c.Connect()
 			c.LoginSession(c.session, fmt.Sprint(c.sequenceNumber))
 			continue
