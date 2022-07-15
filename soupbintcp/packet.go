@@ -34,8 +34,6 @@ func sendDebugPacket(text string, conn net.Conn) {
 	buf[2] = '+'
 	copy(buf[3:], []byte(text))
 
-	log.Print(buf)
-
 	binary.Write(conn, binary.BigEndian, &buf)
 }
 

@@ -14,13 +14,19 @@ func ReceivePacket(packet []byte) {
 func main() {
 	client := soupbintcp.Client{
 		PacketCallback: ReceivePacket,
+		ServerAddr:     fmt.Sprintf("%s:%s", "127.0.0.1", "1337"),
+		Username:       "user",
+		Password:       "pass",
 	}
-	client.Connect(fmt.Sprintf("%s:%s", "127.0.0.1", "1337"))
+	client.Connect()
 
-	err := client.Login("user", "pass")
+	err := client.Login()
 	if err != nil {
 		log.Printf("login failed: %v", err)
 	}
+
+	client.SendDebugMessage("hello debug")
+	client.Send([]byte("this is an unsequenced text message but could be bytes of a higher-level protocol packet"))
 
 	client.Receive()
 

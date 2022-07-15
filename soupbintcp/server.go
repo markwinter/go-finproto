@@ -13,6 +13,7 @@ import (
 )
 
 type Server struct {
+	PacketCallback    func([]byte)
 	activeConns       sync.Map
 	sequenceNumber    uint64
 	session           string
@@ -106,6 +107,8 @@ func (s *Server) handle(conn net.Conn) {
 			return
 		case 'R':
 			log.Printf("Received heartbeat from: %s", conn.RemoteAddr().String())
+		case 'U':
+			s.PacketCallback(packet[3:])
 		}
 	}
 }
@@ -157,8 +160,6 @@ func (s *Server) sendLoginAccepted(conn net.Conn) {
 	log.Print(request)
 
 	binary.Write(conn, binary.BigEndian, &request)
-
-	sendDebugPacket("this is a test packet", conn)
 }
 
 func (s *Server) sendLoginRejected(conn net.Conn, reason byte) {

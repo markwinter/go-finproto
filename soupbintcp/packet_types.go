@@ -37,3 +37,8 @@ type LoginRequestPacket struct {
 type LogoutRequestPacket struct {
 	Packet
 }
+
+type UnsequencedDataPacket struct {
+	Packet
+	Message []byte
+}

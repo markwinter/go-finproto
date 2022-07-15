@@ -17,6 +17,9 @@ const (
 
 type Client struct {
 	PacketCallback    func([]byte)
+	ServerAddr        string
+	Username          string
+	Password          string
 	conn              net.Conn
 	sequenceNumber    int
 	session           string
@@ -24,8 +27,8 @@ type Client struct {
 	heartbeatStopChan chan bool
 }
 
-func (c *Client) Connect(addr string) {
-	conn, err := net.Dial("tcp", addr)
+func (c *Client) Connect() {
+	conn, err := net.Dial("tcp", c.ServerAddr)
 	if err != nil {
 		log.Panic(err)
 	}
@@ -36,9 +39,11 @@ func (c *Client) Disconnect() {
 	c.conn.Close()
 }
 
-func (c *Client) Login(username, password string) error {
-	username = fmt.Sprintf("%-6s", username)
-	password = fmt.Sprintf("%-10s", password)
+// Login will try to connect to a new session and start receiving the first message
+// If you want to connect to a specific session then use LoginSession
+func (c *Client) Login() error {
+	username := fmt.Sprintf("%-6s", c.Username)
+	password := fmt.Sprintf("%-10s", c.Password)
 
 	request := LoginRequestPacket{
 		Packet: Packet{
@@ -50,8 +55,51 @@ func (c *Client) Login(username, password string) error {
 	copy(request.Username[:], username)
 	copy(request.Password[:], password)
 	copy(request.HeartbeatTimeout[:], fmt.Sprint(heartbeatPeriod))
-	copy(request.SequenceNumber[:], "1")
+	copy(request.SequenceNumber[:], fmt.Sprintf("%20s", "1"))
 	copy(request.Session[:], "          ")
+
+	binary.Write(c.conn, binary.BigEndian, &request)
+
+	packet, err := GetNextPacket(c.conn)
+	if err != nil {
+		return err
+	}
+
+	switch packet[2] {
+	case 'A':
+		c.handleLoginAccepted(packet)
+	case 'J':
+		switch packet[3] {
+		case 'A':
+			return errors.New("not authorized")
+		case 'S':
+			return errors.New("session not available")
+		}
+	}
+
+	go c.runHeartbeat()
+
+	return nil
+}
+
+// LoginSession is used to connect to a known existing session
+// and start receiving from the given sequence number
+func (c *Client) LoginSession(session, sequence string) error {
+	username := fmt.Sprintf("%-6s", c.Username)
+	password := fmt.Sprintf("%-10s", c.Password)
+
+	request := LoginRequestPacket{
+		Packet: Packet{
+			Length: [2]byte{0, 52},
+			Type:   'L',
+		},
+	}
+
+	copy(request.Username[:], username)
+	copy(request.Password[:], password)
+	copy(request.HeartbeatTimeout[:], fmt.Sprint(heartbeatPeriod))
+	copy(request.SequenceNumber[:], fmt.Sprintf("%20s", sequence))
+	copy(request.Session[:], fmt.Sprintf("%10s", session))
 
 	binary.Write(c.conn, binary.BigEndian, &request)
 
@@ -115,6 +163,10 @@ func (c *Client) sendHeartbeat() {
 	binary.Write(c.conn, binary.BigEndian, &request)
 }
 
+// Receive will start listening for packets from the Server. Any sequenced or unsequenced data
+// packets will be passed to your PacketCallback function. Receive will also attempt to automatically
+// reconnect to the Server and rejoin the previous session with the current message sequence number.
+// Receive will block until an end of session packet is received.
 func (c *Client) Receive() {
 	for {
 		// We give a grace period of 2 * heartbeatPeriod to read something from the server
@@ -123,13 +175,15 @@ func (c *Client) Receive() {
 
 		packet, err := GetNextPacket(c.conn)
 		if err != nil {
-			return
+			// Try to reconnect and rejoin previous session with current sequqnceNumber
+			c.Connect()
+			c.LoginSession(c.session, fmt.Sprint(c.sequenceNumber))
+			continue
 		}
 
 		switch packet[2] {
 		case '+':
 			handleDebugPacket(packet)
-			sendDebugPacket("pong", c.conn)
 		case 'H':
 			log.Print("received heartbeat packet")
 		case 'Z':
@@ -155,4 +209,21 @@ func (c *Client) handleLoginAccepted(packet []byte) {
 		log.Print(err)
 	}
 	c.sequenceNumber = seq
+}
+
+// Send an unsequenced data packet to the Server
+func (c *Client) Send(data []byte) {
+	l := uint16(2 + 1 + len(data))
+	buf := make([]byte, l)
+
+	binary.BigEndian.PutUint16(buf[0:2], l-2)
+	buf[2] = 'U'
+	copy(buf[3:], data)
+
+	binary.Write(c.conn, binary.BigEndian, &buf)
+}
+
+// Send a debug packet with human readable text to the Server. Not normally used.
+func (c *Client) SendDebugMessage(text string) {
+	sendDebugPacket(text, c.conn)
 }
