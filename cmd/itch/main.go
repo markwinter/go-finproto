@@ -25,9 +25,6 @@ func main() {
 		ReadBufferSize: itch.OneGB,
 	}
 
-	//defer profile.Start().Stop()
-	//defer profile.Start(profile.MemProfile).Stop()
-
 	_, err := itch.ParseFile(*filePath, config)
 	if err != nil {
 		log.Fatal(err)
