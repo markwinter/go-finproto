@@ -1,6 +1,6 @@
 # ITCH
 
-This package implements the Nasdaq ITCH 5.0 protocol
+This package implements a parser for the Nasdaq ITCH 5.0 protocol
 
 https://www.nasdaqtrader.com/content/technicalsupport/specifications/dataproducts/NQTVITCHspecification.pdf
 
