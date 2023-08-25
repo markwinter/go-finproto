@@ -11,10 +11,6 @@ import (
 	"time"
 )
 
-const (
-	emptySession = "          "
-)
-
 type Client struct {
 	PacketCallback      func([]byte)
 	UnsequencedCallback func([]byte)
@@ -49,7 +45,7 @@ func (c *Client) Disconnect() {
 // Login will try to connect to a new session and start receiving the first message
 // If you want to connect to a specific session then use LoginSession
 func (c *Client) Login() error {
-	return c.login(emptySession, 1)
+	return c.login("", 1)
 }
 
 // LoginSession is used to connect to a known existing session
