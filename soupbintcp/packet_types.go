@@ -1,5 +1,24 @@
 package soupbintcp
 
+const (
+	PacketLoginRequest  = 'L'
+	PacketLoginAccepted = 'A'
+	PacketLoginRejected = 'J'
+	PacketLogoutRequest = 'O'
+
+	PacketSequencedData   = 'S'
+	PacketUnsequencedData = 'U'
+
+	PacketClientHeartbeat = 'R'
+	PacketServerHeartbeat = 'H'
+
+	PacketDebug        = '+'
+	PacketEndOfSession = 'Z'
+
+	LoginRejectedNotAuthorized      = 'A'
+	LoginRejectedSessionUnavailable = 'S'
+)
+
 type Packet struct {
 	Length [2]byte
 	Type   byte
@@ -35,6 +54,10 @@ type LoginRequestPacket struct {
 }
 
 type LogoutRequestPacket struct {
+	Packet
+}
+
+type SequencedDataPacket struct {
 	Packet
 }
 

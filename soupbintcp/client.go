@@ -12,28 +12,33 @@ import (
 )
 
 const (
-	heartbeatPeriod = 1000
+	emptySession = "          "
 )
 
 type Client struct {
-	PacketCallback    func([]byte)
-	ServerAddr        string
-	Username          string
-	Password          string
+	PacketCallback      func([]byte)
+	UnsequencedCallback func([]byte)
+	ServerIp            string
+	ServerPort          string
+	Username            string
+	Password            string
+
 	conn              net.Conn
-	sequenceNumber    int
+	sequenceNumber    uint64
 	session           string
 	heartbeatTicker   *time.Ticker
 	heartbeatStopChan chan bool
+	sentMessageChan   chan bool
 }
 
 // Connect to the Server. You must call Login or LoginSession immediately after this
-func (c *Client) Connect() {
-	conn, err := net.Dial("tcp", c.ServerAddr)
+func (c *Client) Connect() error {
+	conn, err := net.Dial("tcp", fmt.Sprintf("%s:%s", c.ServerIp, c.ServerPort))
 	if err != nil {
-		log.Panic(err)
+		return err
 	}
 	c.conn = conn
+	return nil
 }
 
 // Disconnect from the Server
@@ -44,66 +49,35 @@ func (c *Client) Disconnect() {
 // Login will try to connect to a new session and start receiving the first message
 // If you want to connect to a specific session then use LoginSession
 func (c *Client) Login() error {
-	username := fmt.Sprintf("%-6s", c.Username)
-	password := fmt.Sprintf("%-10s", c.Password)
-
-	request := LoginRequestPacket{
-		Packet: Packet{
-			Length: [2]byte{0, 52},
-			Type:   'L',
-		},
-	}
-
-	copy(request.Username[:], username)
-	copy(request.Password[:], password)
-	copy(request.HeartbeatTimeout[:], fmt.Sprint(heartbeatPeriod))
-	copy(request.SequenceNumber[:], fmt.Sprintf("%20s", "1"))
-	copy(request.Session[:], "          ")
-
-	binary.Write(c.conn, binary.BigEndian, &request)
-
-	packet, err := GetNextPacket(c.conn)
-	if err != nil {
-		return err
-	}
-
-	switch packet[2] {
-	case 'A':
-		c.handleLoginAccepted(packet)
-	case 'J':
-		switch packet[3] {
-		case 'A':
-			return errors.New("not authorized")
-		case 'S':
-			return errors.New("session not available")
-		}
-	}
-
-	go c.runHeartbeat()
-
-	return nil
+	return c.login(emptySession, 1)
 }
 
 // LoginSession is used to connect to a known existing session
 // and start receiving from the given sequence number
-func (c *Client) LoginSession(session, sequence string) error {
+func (c *Client) LoginSession(session string, sequence uint64) error {
+	return c.login(session, sequence)
+}
+
+func (c *Client) login(session string, sequence uint64) error {
 	username := fmt.Sprintf("%-6s", c.Username)
 	password := fmt.Sprintf("%-10s", c.Password)
 
 	request := LoginRequestPacket{
 		Packet: Packet{
 			Length: [2]byte{0, 52},
-			Type:   'L',
+			Type:   PacketLoginRequest,
 		},
 	}
 
 	copy(request.Username[:], username)
 	copy(request.Password[:], password)
-	copy(request.HeartbeatTimeout[:], fmt.Sprint(heartbeatPeriod))
-	copy(request.SequenceNumber[:], fmt.Sprintf("%20s", sequence))
+	copy(request.HeartbeatTimeout[:], fmt.Sprint(heartbeatPeriod_ms))
+	copy(request.SequenceNumber[:], fmt.Sprintf("%20s", strconv.Itoa(int(sequence))))
 	copy(request.Session[:], fmt.Sprintf("%10s", session))
 
-	binary.Write(c.conn, binary.BigEndian, &request)
+	if err := binary.Write(c.conn, binary.BigEndian, &request); err != nil {
+		return err
+	}
 
 	packet, err := GetNextPacket(c.conn)
 	if err != nil {
@@ -111,13 +85,15 @@ func (c *Client) LoginSession(session, sequence string) error {
 	}
 
 	switch packet[2] {
-	case 'A':
-		c.handleLoginAccepted(packet)
-	case 'J':
+	case PacketLoginAccepted:
+		if err := c.handleLoginAccepted(packet); err != nil {
+			return err
+		}
+	case PacketLoginRejected:
 		switch packet[3] {
-		case 'A':
+		case LoginRejectedNotAuthorized:
 			return errors.New("not authorized")
-		case 'S':
+		case LoginRejectedSessionUnavailable:
 			return errors.New("session not available")
 		}
 	}
@@ -132,23 +108,33 @@ func (c *Client) Logout() {
 	request := LogoutRequestPacket{
 		Packet: Packet{
 			Length: [2]byte{0, 1},
-			Type:   'O',
+			Type:   PacketLogoutRequest,
 		},
 	}
 
-	binary.Write(c.conn, binary.BigEndian, &request)
+	if err := binary.Write(c.conn, binary.BigEndian, &request); err != nil {
+		log.Println("failed sending logout request")
+	}
 
 	c.heartbeatStopChan <- true
 }
 
 func (c *Client) runHeartbeat() {
-	c.heartbeatTicker = time.NewTicker(heartbeatPeriod * time.Millisecond)
+	c.sentMessageChan = make(chan bool)
 	c.heartbeatStopChan = make(chan bool)
+
+	c.heartbeatTicker = time.NewTicker(heartbeatPeriod_ms * time.Millisecond)
+	defer c.heartbeatTicker.Stop()
 
 	for {
 		select {
 		case <-c.heartbeatTicker.C:
 			c.sendHeartbeat()
+		case <-c.sentMessageChan:
+			// If we sent a message to the server, reset ticker so we're not sending
+			// more often than we need to
+			c.heartbeatTicker.Reset(heartbeatPeriod_ms * time.Millisecond)
+			continue
 		case <-c.heartbeatStopChan:
 			return
 		}
@@ -159,11 +145,13 @@ func (c *Client) sendHeartbeat() {
 	request := HeartbeatPacket{
 		Packet: Packet{
 			Length: [2]byte{0, 3},
-			Type:   'R',
+			Type:   PacketClientHeartbeat,
 		},
 	}
 
-	binary.Write(c.conn, binary.BigEndian, &request)
+	if err := binary.Write(c.conn, binary.BigEndian, &request); err != nil {
+		log.Println("failed sending heartbeat")
+	}
 }
 
 // Receive will start listening for packets from the Server. Any sequenced or unsequenced data
@@ -174,59 +162,89 @@ func (c *Client) Receive() {
 	for {
 		// We give a grace period of 2 * heartbeatPeriod to read something from the server
 		// The server should be sending heartbeats every 1 * heartbeatPeriod
-		c.conn.SetReadDeadline(time.Now().Add(heartbeatPeriod * time.Millisecond * 2))
+		err := c.conn.SetReadDeadline(time.Now().Add(heartbeatPeriod_ms * time.Millisecond * 2))
+		if err != nil {
+			log.Println("error setting read deadline")
+			continue
+		}
 
 		packet, err := GetNextPacket(c.conn)
 		if err != nil {
+			log.Printf("connection error, attempting to relogin to session %q with sequence number %d\n", c.session, c.sequenceNumber)
 			// Try to reconnect and rejoin previous session with current sequenceNumber
-			c.Connect()
-			c.LoginSession(c.session, fmt.Sprint(c.sequenceNumber))
+			if err := c.Connect(); err != nil {
+				log.Println("failed to reconnect")
+				return
+			}
+			if err := c.LoginSession(c.session, c.sequenceNumber); err != nil {
+				log.Println("failed to login after reconnect")
+				return
+			}
+
 			continue
 		}
 
 		switch packet[2] {
-		case '+':
+		case PacketDebug:
 			handleDebugPacket(packet)
-		case 'H':
+		case PacketServerHeartbeat:
 			log.Print("received heartbeat packet")
-		case 'Z':
+		case PacketEndOfSession:
 			log.Print("end of session packet")
 			return
-		case 'S':
+		case PacketSequencedData:
 			c.sequenceNumber++
-			c.PacketCallback(packet[3:])
-		case 'U':
-			c.PacketCallback(packet[3:])
+			if c.PacketCallback != nil {
+				c.PacketCallback(packet[3:])
+			}
+		case PacketUnsequencedData:
+			if c.UnsequencedCallback != nil {
+				c.UnsequencedCallback(packet[3:])
+			}
 		default:
 			log.Print("unknown packet type received")
 		}
 	}
 }
 
-func (c *Client) handleLoginAccepted(packet []byte) {
+func (c *Client) handleLoginAccepted(packet []byte) error {
 	c.session = strings.TrimSpace(string(packet[3:13]))
 
 	sq := strings.TrimSpace(string(packet[13:33]))
-	seq, err := strconv.Atoi(sq)
+
+	var err error
+	c.sequenceNumber, err = strconv.ParseUint(sq, 10, 64)
 	if err != nil {
-		log.Print(err)
+		return err
 	}
-	c.sequenceNumber = seq
+
+	log.Printf("connected to session %q and starting with sequence %d\n", c.session, c.sequenceNumber)
+
+	return nil
 }
 
 // Send an unsequenced data packet to the Server
-func (c *Client) Send(data []byte) {
+func (c *Client) Send(data []byte) error {
 	l := uint16(2 + 1 + len(data))
 	buf := make([]byte, l)
 
 	binary.BigEndian.PutUint16(buf[0:2], l-2)
-	buf[2] = 'U'
+	buf[2] = PacketUnsequencedData
 	copy(buf[3:], data)
 
-	binary.Write(c.conn, binary.BigEndian, &buf)
+	if err := binary.Write(c.conn, binary.BigEndian, &buf); err != nil {
+		return err
+	}
+
+	c.sentMessageChan <- true
+	return nil
 }
 
 // Send a debug packet with human readable text to the Server. Not normally used.
-func (c *Client) SendDebugMessage(text string) {
-	sendDebugPacket(text, c.conn)
+func (c *Client) SendDebugMessage(text string) error {
+	if err := sendDebugPacket(text, c.conn); err != nil {
+		return err
+	}
+	c.sentMessageChan <- true
+	return nil
 }

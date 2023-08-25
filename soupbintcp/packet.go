@@ -26,7 +26,7 @@ func GetNextPacket(conn net.Conn) ([]byte, error) {
 	return buf, nil
 }
 
-func sendDebugPacket(text string, conn net.Conn) {
+func sendDebugPacket(text string, conn net.Conn) error {
 	l := uint16(2 + 1 + len(text))
 	buf := make([]byte, l)
 
@@ -34,7 +34,11 @@ func sendDebugPacket(text string, conn net.Conn) {
 	buf[2] = '+'
 	copy(buf[3:], []byte(text))
 
-	binary.Write(conn, binary.BigEndian, &buf)
+	if err := binary.Write(conn, binary.BigEndian, &buf); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func handleDebugPacket(packet []byte) {

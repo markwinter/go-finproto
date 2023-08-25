@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 
 	"github.com/markwinter/go-finproto/soupbintcp"
@@ -14,22 +13,35 @@ func ReceivePacket(packet []byte) {
 func main() {
 	client := soupbintcp.Client{
 		PacketCallback: ReceivePacket,
-		ServerAddr:     fmt.Sprintf("%s:%s", "127.0.0.1", "1337"),
+		ServerIp:       "127.0.0.1",
+		ServerPort:     "1337",
 		Username:       "user",
 		Password:       "pass",
 	}
-	client.Connect()
+	if err := client.Connect(); err != nil {
+		log.Println("failed to connect to server")
+		return
+	}
+	defer client.Disconnect()
 
-	err := client.Login()
-	if err != nil {
-		log.Printf("login failed: %v", err)
+	log.Println("connected to server")
+
+	if err := client.Login(); err != nil {
+		log.Printf("login failed: %v\n", err)
+		return
+	}
+	defer client.Logout()
+
+	log.Println("logged in")
+
+	if err := client.SendDebugMessage("hello debug"); err != nil {
+		log.Printf("failed sending debug packet to server: %v\n", err)
 	}
 
-	client.SendDebugMessage("hello debug")
-	client.Send([]byte("this is an unsequenced text message but could be bytes of a higher-level protocol packet"))
+	if err := client.Send([]byte("this is an unsequenced text message but could be bytes of a higher-level protocol packet")); err != nil {
+		log.Printf("failed sending packet to server: %v\n", err)
+	}
 
+	// Blocks until end of session packet received. Use a goroutine to unblock
 	client.Receive()
-
-	client.Logout()
-	client.Disconnect()
 }
