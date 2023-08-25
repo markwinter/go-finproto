@@ -34,7 +34,7 @@ func sendDebugPacket(text string, conn net.Conn) error {
 	buf := make([]byte, l)
 
 	binary.BigEndian.PutUint16(buf[0:2], l-2)
-	buf[2] = '+'
+	buf[2] = PacketDebug
 	copy(buf[3:], []byte(text))
 
 	if err := binary.Write(conn, binary.BigEndian, &buf); err != nil {
