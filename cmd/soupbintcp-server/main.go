@@ -31,5 +31,8 @@ func main() {
 		PacketCallback: ReceivePacket,
 		LoginCallback:  LoginCallback,
 	}
+
+	server.CreateSession("ABCDEF")
+
 	server.ListenAndServe(fmt.Sprintf("%s:%s", "127.0.0.1", "1337"))
 }

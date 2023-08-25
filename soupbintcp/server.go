@@ -2,29 +2,21 @@ package soupbintcp
 
 import (
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"log"
-	"math/rand"
 	"net"
-)
-
-const (
-	letterBytes     = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-	sessionIdLength = 10
 )
 
 type Server struct {
 	LoginCallback  func(LoginRequestPacket) bool
 	PacketCallback func([]byte)
-	sequenceNumber uint64
-	sessions       map[string]Session
-	sentData       [][]byte
+
+	activeSession bool
+	session       Session
 }
 
 func (s *Server) ListenAndServe(addr string) {
-	s.sequenceNumber = 1
-	s.sessions = map[string]Session{}
-
 	l, err := net.Listen("tcp", addr)
 	if err != nil {
 		log.Panic(err)
@@ -41,45 +33,49 @@ func (s *Server) ListenAndServe(addr string) {
 
 		log.Printf("client connected %q", conn.RemoteAddr())
 
-		// Ensure we generate an id we haven't already used
-		// Todo: make this smarter, possible infinite loop if we're unlucky
-		id := generateSessionId(sessionIdLength)
+		// Get Login Request Packet
+		// Check session is active
+		// Check sequence number
+		// Start sending from that sequence number
 
-		s.sendLoginAccepted(id, conn)
-
-		for _, ok := s.sessions[id]; ok; _, ok = s.sessions[id] {
-			id = generateSessionId(sessionIdLength)
-		}
-
-		session := MakeSession(id, conn)
-		s.sessions[id] = session
+		s.sendLoginAccepted(conn)
 	}
 }
 
-func (s *Server) SendData(data []byte) error {
-	s.sentData = append(s.sentData, data)
-	s.sequenceNumber += 1
+func (s *Server) CreateSession(id string) error {
+	if s.activeSession {
+		return errors.New("session already exists, call DeleteSession first")
+	}
+
+	s.session = MakeSession(id)
+	s.activeSession = true
+
 	return nil
 }
 
-func generateSessionId(n int) string {
-	b := make([]byte, n)
-	for i := range b {
-		b[i] = letterBytes[rand.Intn(len(letterBytes))]
+func (s *Server) DeleteSession(id string) error {
+	if !s.activeSession {
+		return nil
 	}
-	return string(b)
+
+	// TODO: call end of session packet here?
+	return nil
 }
 
-func (s *Server) sendLoginAccepted(session string, conn net.Conn) {
+func (s *Server) SendToSession(id string, data []byte) error {
+	return s.session.Send(data)
+}
+
+func (s *Server) sendLoginAccepted(conn net.Conn) {
 	request := LoginAcceptedPacket{
 		Packet: Packet{
 			Length: [2]byte{0, 33},
-			Type:   'A',
+			Type:   PacketLoginAccepted,
 		},
 	}
 
-	copy(request.SequenceNumber[:], fmt.Sprintf("%20d", s.sequenceNumber))
-	copy(request.Session[:], []byte(session))
+	copy(request.SequenceNumber[:], fmt.Sprintf("%20d", s.session.CurrentSequenceNumber))
+	copy(request.Session[:], []byte(s.session.Id))
 
 	if err := binary.Write(conn, binary.BigEndian, &request); err != nil {
 		log.Printf("failed sending login accepted: %v", err)
