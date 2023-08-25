@@ -12,7 +12,11 @@ import (
 )
 
 type Client struct {
-	PacketCallback      func([]byte)
+	// PacketCallback is called for every sequenced packet received. The byte slice parameter contains just the message data and should be further
+	// parsed as some higher level protocol
+	PacketCallback func([]byte)
+	// UnsequencedCallback is called for every unsequenced packet received. The byte slice parameter contains just the message data and should be further
+	// parsed as some higher level protocol
 	UnsequencedCallback func([]byte)
 	ServerIp            string
 	ServerPort          string
