@@ -22,6 +22,7 @@ type Server struct {
 }
 
 func (s *Server) ListenAndServe(addr string) {
+	s.sequenceNumber = 1
 	s.sessions = map[string]Session{}
 
 	l, err := net.Listen("tcp", addr)
@@ -37,6 +38,8 @@ func (s *Server) ListenAndServe(addr string) {
 			log.Print(err)
 			continue
 		}
+
+		log.Printf("client connected %q", conn.RemoteAddr())
 
 		// Ensure we generate an id we haven't already used
 		// Todo: make this smarter, possible infinite loop if we're unlucky
@@ -77,8 +80,6 @@ func (s *Server) sendLoginAccepted(session string, conn net.Conn) {
 
 	copy(request.SequenceNumber[:], fmt.Sprintf("%20d", s.sequenceNumber))
 	copy(request.Session[:], []byte(session))
-
-	log.Print(request)
 
 	if err := binary.Write(conn, binary.BigEndian, &request); err != nil {
 		log.Printf("failed sending login accepted: %v", err)
