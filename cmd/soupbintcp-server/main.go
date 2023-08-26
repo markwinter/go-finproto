@@ -29,10 +29,15 @@ func main() {
 	server := soupbintcp.Server{
 		// The Server can receive Unsequenced Data Packets from the Client
 		PacketCallback: ReceivePacket,
-		LoginCallback:  LoginCallback,
+		// All client login requests will invoke this callback
+		LoginCallback: LoginCallback,
 	}
 
-	server.CreateSession("ABCDEF")
+	sessionId := "ABCDEFGHIJ"
+	if err := server.CreateSession(sessionId); err != nil {
+		log.Printf("failed to create session: %v", err)
+		return
+	}
 
 	server.ListenAndServe(fmt.Sprintf("%s:%s", "127.0.0.1", "1337"))
 }
