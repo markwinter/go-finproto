@@ -31,8 +31,7 @@ type Client struct {
 	sentMessageChan   chan bool
 }
 
-// Connect to the Server. You must call Login or LoginSession immediately after this
-func (c *Client) Connect() error {
+func (c *Client) connect() error {
 	conn, err := net.Dial("tcp", fmt.Sprintf("%s:%s", c.ServerIp, c.ServerPort))
 	if err != nil {
 		return err
@@ -41,8 +40,7 @@ func (c *Client) Connect() error {
 	return nil
 }
 
-// Disconnect from the Server
-func (c *Client) Disconnect() {
+func (c *Client) disconnect() {
 	c.conn.Close()
 }
 
@@ -59,6 +57,10 @@ func (c *Client) LoginSession(session string, sequence uint64) error {
 }
 
 func (c *Client) login(session string, sequence uint64) error {
+	if err := c.connect(); err != nil {
+		return err
+	}
+
 	username := fmt.Sprintf("%-6s", c.Username)
 	password := fmt.Sprintf("%-10s", c.Password)
 
@@ -117,6 +119,8 @@ func (c *Client) Logout() {
 	}
 
 	c.heartbeatStopChan <- true
+
+	c.disconnect()
 }
 
 func (c *Client) runHeartbeat() {
@@ -172,10 +176,6 @@ func (c *Client) Receive() {
 		if err != nil {
 			log.Printf("connection error, attempting to relogin to session %q with sequence number %d\n", c.session, c.sequenceNumber)
 			// Try to reconnect and rejoin previous session with current sequenceNumber
-			if err := c.Connect(); err != nil {
-				log.Println("failed to reconnect")
-				return
-			}
 			if err := c.LoginSession(c.session, c.sequenceNumber); err != nil {
 				log.Println("failed to login after reconnect")
 				return

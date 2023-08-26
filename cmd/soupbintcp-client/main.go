@@ -18,13 +18,6 @@ func main() {
 		Username:       "user",
 		Password:       "pass",
 	}
-	if err := client.Connect(); err != nil {
-		log.Println("failed to connect to server")
-		return
-	}
-	defer client.Disconnect()
-
-	log.Println("connected to server")
 
 	if err := client.Login(); err != nil {
 		log.Printf("login failed: %v\n", err)
