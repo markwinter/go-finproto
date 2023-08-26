@@ -39,6 +39,7 @@ func (s *Server) ListenAndServe(addr string) {
 		// Start sending from that sequence number
 
 		s.sendLoginAccepted(conn)
+		s.session.AddConn(conn)
 	}
 }
 
@@ -62,7 +63,11 @@ func (s *Server) DeleteSession(id string) error {
 	return nil
 }
 
-func (s *Server) SendToSession(id string, data []byte) error {
+func (s *Server) SendToSession(data []byte) error {
+	if !s.activeSession {
+		return errors.New("no active session")
+	}
+
 	return s.session.Send(data)
 }
 
