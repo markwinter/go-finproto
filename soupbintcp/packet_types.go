@@ -19,33 +19,33 @@ const (
 	LoginRejectedSessionUnavailable = 'S'
 )
 
-type Packet struct {
+type Header struct {
 	Length [2]byte
 	Type   byte
 }
 
 type DebugPacket struct {
-	Packet
+	Header
 	Text string
 }
 
 type HeartbeatPacket struct {
-	Packet
+	Header
 }
 
 type LoginAcceptedPacket struct {
-	Packet
+	Header
 	Session        [10]byte
 	SequenceNumber [20]byte
 }
 
 type LoginRejectedPacket struct {
-	Packet
+	Header
 	Reason byte
 }
 
 type LoginRequestPacket struct {
-	Packet
+	Header
 	Username         [6]byte
 	Password         [10]byte
 	Session          [10]byte
@@ -54,14 +54,14 @@ type LoginRequestPacket struct {
 }
 
 type LogoutRequestPacket struct {
-	Packet
+	Header
 }
 
 type SequencedDataPacket struct {
-	Packet
+	Header
 }
 
 type UnsequencedDataPacket struct {
-	Packet
+	Header
 	Message []byte
 }

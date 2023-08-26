@@ -73,7 +73,7 @@ func (s *Server) SendToSession(data []byte) error {
 
 func (s *Server) sendLoginAccepted(conn net.Conn) {
 	request := LoginAcceptedPacket{
-		Packet: Packet{
+		Header: Header{
 			Length: [2]byte{0, 33},
 			Type:   PacketLoginAccepted,
 		},

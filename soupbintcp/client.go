@@ -65,7 +65,7 @@ func (c *Client) login(session string, sequence uint64) error {
 	password := fmt.Sprintf("%-10s", c.Password)
 
 	request := LoginRequestPacket{
-		Packet: Packet{
+		Header: Header{
 			Length: [2]byte{0, 52},
 			Type:   PacketLoginRequest,
 		},
@@ -108,7 +108,7 @@ func (c *Client) login(session string, sequence uint64) error {
 // Logout from the Server
 func (c *Client) Logout() {
 	request := LogoutRequestPacket{
-		Packet: Packet{
+		Header: Header{
 			Length: [2]byte{0, 1},
 			Type:   PacketLogoutRequest,
 		},
@@ -147,7 +147,7 @@ func (c *Client) runHeartbeat() {
 
 func (c *Client) sendHeartbeat() {
 	request := HeartbeatPacket{
-		Packet: Packet{
+		Header: Header{
 			Length: [2]byte{0, 3},
 			Type:   PacketClientHeartbeat,
 		},
