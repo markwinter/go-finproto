@@ -6,11 +6,8 @@ import (
 	"net"
 )
 
-var (
-	packetLengthBuffer = make([]byte, 2)
-)
-
 func GetNextPacket(conn net.Conn) ([]byte, error) {
+	packetLengthBuffer := make([]byte, 2)
 	_, err := conn.Read(packetLengthBuffer)
 	if err != nil {
 		log.Printf("Error reading: %v\n", err)
