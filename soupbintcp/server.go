@@ -13,7 +13,7 @@ type Server struct {
 	PacketCallback func([]byte)
 
 	activeSession bool
-	session       Session
+	session       session
 }
 
 func (s *Server) ListenAndServe(addr string) {
@@ -39,7 +39,7 @@ func (s *Server) ListenAndServe(addr string) {
 		// Start sending from that sequence number
 
 		s.sendLoginAccepted(conn)
-		s.session.AddConn(conn)
+		s.session.addConn(conn)
 	}
 }
 
@@ -48,7 +48,7 @@ func (s *Server) CreateSession(id string) error {
 		return errors.New("session already exists, call DeleteSession first")
 	}
 
-	s.session = MakeSession(id)
+	s.session = makeSession(id)
 	s.activeSession = true
 
 	return nil
@@ -68,7 +68,7 @@ func (s *Server) SendToSession(data []byte) error {
 		return errors.New("no active session")
 	}
 
-	return s.session.Send(data)
+	return s.session.send(data)
 }
 
 func (s *Server) sendLoginAccepted(conn net.Conn) {

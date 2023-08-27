@@ -81,7 +81,7 @@ func (c *Client) login(session string, sequence uint64) error {
 		return err
 	}
 
-	packet, err := GetNextPacket(c.conn)
+	packet, err := getNextPacket(c.conn)
 	if err != nil {
 		return err
 	}
@@ -172,10 +172,11 @@ func (c *Client) Receive() {
 			continue
 		}
 
-		packet, err := GetNextPacket(c.conn)
+		packet, err := getNextPacket(c.conn)
 		if err != nil {
 			log.Printf("connection error, attempting to relogin to session %q with sequence number %d\n", c.session, c.sequenceNumber)
 			// Try to reconnect and rejoin previous session with current sequenceNumber
+			// TODO: some exponential backoff and max retry logic
 			if err := c.LoginSession(c.session, c.sequenceNumber); err != nil {
 				log.Println("failed to login after reconnect")
 				return
