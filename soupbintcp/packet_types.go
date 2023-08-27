@@ -59,6 +59,7 @@ type LogoutRequestPacket struct {
 
 type SequencedDataPacket struct {
 	Header
+	Message []byte
 }
 
 type UnsequencedDataPacket struct {
