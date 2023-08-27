@@ -1,3 +1,3 @@
 module github.com/markwinter/go-finproto
 
-go 1.18
+go 1.21

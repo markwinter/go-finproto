@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"log"
-	"strings"
 
 	"github.com/markwinter/go-finproto/soupbintcp"
 )
@@ -12,17 +11,8 @@ func ReceivePacket(packet []byte) {
 	log.Printf("Received unsequenced data packet: %v", packet)
 }
 
-func LoginCallback(packet soupbintcp.LoginRequestPacket) bool {
-	log.Printf("Received login request: %v", packet)
-
-	username := strings.TrimSpace(string(packet.Username[:]))
-	password := strings.TrimSpace(string(packet.Password[:]))
-	log.Printf("username: %s password: %s", username, password)
-
-	session := strings.TrimSpace(string(packet.Session[:]))
-	log.Printf("session: %v", session)
-
-	return true
+func LoginCallback(username, password string) bool {
+	return username == "test" && password == "test"
 }
 
 func main() {

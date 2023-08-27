@@ -15,8 +15,8 @@ func main() {
 		PacketCallback: ReceivePacket,
 		ServerIp:       "127.0.0.1",
 		ServerPort:     "1337",
-		Username:       "user",
-		Password:       "pass",
+		Username:       "test",
+		Password:       "test",
 	}
 
 	if err := client.Login(); err != nil {
