@@ -148,7 +148,7 @@ func (c *Client) runHeartbeat() {
 func (c *Client) sendHeartbeat() {
 	request := HeartbeatPacket{
 		Header: Header{
-			Length: [2]byte{0, 3},
+			Length: [2]byte{0, 1},
 			Type:   PacketClientHeartbeat,
 		},
 	}
