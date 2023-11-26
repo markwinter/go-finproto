@@ -61,23 +61,9 @@ func (c *Client) login(session string, sequence uint64) error {
 		return err
 	}
 
-	username := fmt.Sprintf("%-6s", c.Username)
-	password := fmt.Sprintf("%-10s", c.Password)
+	loginPacket := makeLoginRequestPacket(c.Username, c.Password, session, sequence)
 
-	request := LoginRequestPacket{
-		Header: Header{
-			Length: [2]byte{0, 52},
-			Type:   PacketLoginRequest,
-		},
-	}
-
-	copy(request.Username[:], username)
-	copy(request.Password[:], password)
-	copy(request.HeartbeatTimeout[:], fmt.Sprint(heartbeatPeriod_ms))
-	copy(request.SequenceNumber[:], fmt.Sprintf("%20s", strconv.Itoa(int(sequence))))
-	copy(request.Session[:], fmt.Sprintf("%10s", session))
-
-	if err := binary.Write(c.conn, binary.BigEndian, &request); err != nil {
+	if err := binary.Write(c.conn, binary.BigEndian, loginPacket.Bytes()); err != nil {
 		return err
 	}
 
@@ -87,11 +73,11 @@ func (c *Client) login(session string, sequence uint64) error {
 	}
 
 	switch packet[2] {
-	case PacketLoginAccepted:
+	case PacketTypeLoginAccepted:
 		if err := c.handleLoginAccepted(packet); err != nil {
 			return err
 		}
-	case PacketLoginRejected:
+	case PacketTypeLoginRejected:
 		switch packet[3] {
 		case LoginRejectedNotAuthorized:
 			return errors.New("not authorized")
@@ -107,14 +93,9 @@ func (c *Client) login(session string, sequence uint64) error {
 
 // Logout from the Server
 func (c *Client) Logout() {
-	request := LogoutRequestPacket{
-		Header: Header{
-			Length: [2]byte{0, 1},
-			Type:   PacketLogoutRequest,
-		},
-	}
+	packet := makeLogoutRequestPacket()
 
-	if err := binary.Write(c.conn, binary.BigEndian, &request); err != nil {
+	if err := binary.Write(c.conn, binary.BigEndian, packet.Bytes()); err != nil {
 		log.Println("failed sending logout request")
 	}
 
@@ -146,14 +127,9 @@ func (c *Client) runHeartbeat() {
 }
 
 func (c *Client) sendHeartbeat() {
-	request := HeartbeatPacket{
-		Header: Header{
-			Length: [2]byte{0, 1},
-			Type:   PacketClientHeartbeat,
-		},
-	}
+	packet := makeClientHeartbeatPacket()
 
-	if err := binary.Write(c.conn, binary.BigEndian, &request); err != nil {
+	if err := binary.Write(c.conn, binary.BigEndian, packet.Bytes()); err != nil {
 		log.Println("failed sending heartbeat")
 	}
 }
@@ -186,19 +162,19 @@ func (c *Client) Receive() {
 		}
 
 		switch packet[2] {
-		case PacketDebug:
-			handleDebugPacket(packet)
-		case PacketServerHeartbeat:
+		case PacketTypeDebug:
+			log.Printf("[DEBUG PACKET] %s", packet[3:])
+		case PacketTypeServerHeartbeat:
 			log.Print("received heartbeat packet")
-		case PacketEndOfSession:
+		case PacketTypeEndOfSession:
 			log.Print("end of session packet")
 			return
-		case PacketSequencedData:
+		case PacketTypeSequencedData:
 			c.sequenceNumber++
 			if c.PacketCallback != nil {
 				c.PacketCallback(packet[3:])
 			}
-		case PacketUnsequencedData:
+		case PacketTypeUnsequencedData:
 			if c.UnsequencedCallback != nil {
 				c.UnsequencedCallback(packet[3:])
 			}
@@ -226,14 +202,9 @@ func (c *Client) handleLoginAccepted(packet []byte) error {
 
 // Send an unsequenced data packet to the Server
 func (c *Client) Send(data []byte) error {
-	l := uint16(2 + 1 + len(data))
-	buf := make([]byte, l)
+	packet := makeUnsequencedDataPacket(data)
 
-	binary.BigEndian.PutUint16(buf[0:2], l-2)
-	buf[2] = PacketUnsequencedData
-	copy(buf[3:], data)
-
-	if err := binary.Write(c.conn, binary.BigEndian, &buf); err != nil {
+	if err := binary.Write(c.conn, binary.BigEndian, packet.Bytes()); err != nil {
 		return err
 	}
 
@@ -243,9 +214,12 @@ func (c *Client) Send(data []byte) error {
 
 // Send a debug packet with human readable text to the Server. Not normally used.
 func (c *Client) SendDebugMessage(text string) error {
-	if err := sendDebugPacket(text, c.conn); err != nil {
+	packet := makeDebugPacket(text)
+
+	if err := binary.Write(c.conn, binary.BigEndian, packet.Bytes()); err != nil {
 		return err
 	}
+
 	c.sentMessageChan <- true
 	return nil
 }

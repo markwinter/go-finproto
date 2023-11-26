@@ -12,14 +12,21 @@ import (
 )
 
 type Server struct {
-	LoginCallback  func(username, password string) bool
+	// LoginCallback is called for every login request. The username and password is supplied for you to perform additional auth logic
+	LoginCallback func(username, password string) bool
+	// PacketCallback is called for every unsequenced packet received from a client. The byte slice parameter contains just the message and should
+	// be parsed by a higher level protocol
 	PacketCallback func([]byte)
+	// DebugCallback is called for every debug packet received from a client. This is not normally used.
+	DebugCallback func([]byte)
 
 	activeSession bool
 	session       session
 }
 
-func (s *Server) ListenAndServe(addr string) {
+func (s *Server) ListenAndServe(ip, port string) {
+	addr := fmt.Sprintf("%s:%s", ip, port)
+
 	l, err := net.Listen("tcp", addr)
 	if err != nil {
 		log.Panic(err)
@@ -87,8 +94,17 @@ func (s *Server) handleConnection(conn net.Conn) {
 		return
 	}
 
-	// Start sending from sequence number
+	// Start sending from current or requested sequence number
 	// Listen for unsequenced and debug packets
+	for {
+		err := conn.SetReadDeadline(time.Now().Add(heartbeatPeriod_ms * time.Millisecond * 2))
+		if err != nil {
+			log.Println("error setting read deadline")
+			continue
+		}
+
+		select {}
+	}
 }
 
 func (s *Server) handleLogin(conn net.Conn) bool {
@@ -100,7 +116,7 @@ func (s *Server) handleLogin(conn net.Conn) bool {
 	}
 
 	packet, err := getNextPacket(conn)
-	if err != nil || packet[2] != PacketLoginRequest {
+	if err != nil || packet[2] != PacketTypeLoginRequest {
 		s.sendLoginRejected(LoginRejectedNotAuthorized, conn)
 		return false
 	}
@@ -139,31 +155,17 @@ func (s *Server) handleLogin(conn net.Conn) bool {
 }
 
 func (s *Server) sendLoginAccepted(seq uint64, conn net.Conn) {
-	request := LoginAcceptedPacket{
-		Header: Header{
-			Length: [2]byte{0, 33},
-			Type:   PacketLoginAccepted,
-		},
-	}
+	packet := makeLoginAcceptedPacket(s.session.id, seq)
 
-	copy(request.SequenceNumber[:], fmt.Sprintf("%20d", seq))
-	copy(request.Session[:], []byte(s.session.id))
-
-	if err := binary.Write(conn, binary.BigEndian, &request); err != nil {
+	if err := binary.Write(conn, binary.BigEndian, packet.Bytes()); err != nil {
 		log.Printf("failed sending login accepted: %v\n", err)
 	}
 }
 
 func (s *Server) sendLoginRejected(reason byte, conn net.Conn) {
-	request := LoginRejectedPacket{
-		Header: Header{
-			Length: [2]byte{0, 33},
-			Type:   PacketLoginRejected,
-		},
-		Reason: reason,
-	}
+	packet := makeLoginRejectedPacket(reason)
 
-	if err := binary.Write(conn, binary.BigEndian, &request); err != nil {
+	if err := binary.Write(conn, binary.BigEndian, packet.Bytes()); err != nil {
 		log.Printf("failed sending login rejected: %v\n", err)
 	}
 }

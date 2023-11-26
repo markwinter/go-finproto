@@ -18,7 +18,7 @@ func (s *memoryStore) store(data []byte) error {
 }
 
 func (s *memoryStore) read(index int) ([]byte, error) {
-	if index > len(s.data) {
+	if index < 0 || index >= len(s.data) {
 		return []byte{}, errors.New("index past data store length")
 	}
 	return s.data[index], nil

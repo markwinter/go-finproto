@@ -3,11 +3,11 @@ package main
 import (
 	"log"
 
-	"github.com/markwinter/go-finproto/soupbintcp"
+	soupbintcp "github.com/markwinter/go-finproto/soupbintcp/4.1"
 )
 
 func ReceivePacket(packet []byte) {
-	log.Printf("Received packet: %v", packet)
+	log.Printf("Received packet: %v\n", packet)
 }
 
 func main() {
