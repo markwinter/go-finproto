@@ -13,8 +13,7 @@ func ReceivePacket(packet []byte) {
 func main() {
 	client := soupbintcp.NewClient(
 		soupbintcp.WithServer("127.0.0.1", "1337"),
-		soupbintcp.WithUsername("test"),
-		soupbintcp.WithPassword("test"),
+		soupbintcp.WithAuth("test", "test"),
 		soupbintcp.WithCallback(ReceivePacket),
 	)
 

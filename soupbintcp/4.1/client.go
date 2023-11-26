@@ -43,14 +43,9 @@ func NewClient(opts ...ClientOption) *Client {
 	return c
 }
 
-func WithUsername(username string) ClientOption {
+func WithAuth(username, password string) ClientOption {
 	return func(c *Client) {
 		c.Username = username
-	}
-}
-
-func WithPassword(password string) ClientOption {
-	return func(c *Client) {
 		c.Password = password
 	}
 }
