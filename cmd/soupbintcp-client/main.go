@@ -22,6 +22,8 @@ func main() {
 		soupbintcp.WithDebugCallback(DebugPacket),
 	)
 
+	// Login() will login with an empty session id and sequence number 1, as is recommended by the spec
+	// If you know the session and sequence number, use LoginSession()
 	if err := client.Login(); err != nil {
 		log.Printf("login failed: %v\n", err)
 		return
@@ -39,5 +41,6 @@ func main() {
 	}
 
 	// Blocks until end of session packet received. Use a goroutine to unblock
+	// Will automatically attempt to re-connect and resume the same session and sequence number
 	client.Receive()
 }
