@@ -281,7 +281,7 @@ func makeDebugPacket(text string) Packet {
 	return DebugPacket{
 		Header: Header{
 			Length: packetLength,
-			Type:   PacketTypeUnsequencedData,
+			Type:   PacketTypeDebug,
 		},
 		Text: text,
 	}
