@@ -48,7 +48,7 @@ func WithPacketCallback(callback func([]byte)) ServerOption {
 	}
 }
 
-func WithDebugCallback(callback func([]byte)) ServerOption {
+func WithServerDebugCallback(callback func([]byte)) ServerOption {
 	return func(s *Server) {
 		s.DebugCallback = callback
 	}

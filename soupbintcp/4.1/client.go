@@ -18,10 +18,13 @@ type Client struct {
 	// UnsequencedCallback is called for every unsequenced packet received. The byte slice parameter contains just the message data and should be further
 	// parsed as some higher level protocol
 	UnsequencedCallback func([]byte)
-	ServerIp            string
-	ServerPort          string
-	Username            string
-	Password            string
+	// DebugCallback is called for every debug packet received. This is not normally used
+	DebugCallBack func(string)
+
+	ServerIp   string
+	ServerPort string
+	Username   string
+	Password   string
 
 	conn              net.Conn
 	sequenceNumber    uint64
@@ -59,6 +62,12 @@ func WithCallback(callback func([]byte)) ClientOption {
 func WithUnsequencedCallback(callback func([]byte)) ClientOption {
 	return func(c *Client) {
 		c.UnsequencedCallback = callback
+	}
+}
+
+func WithDebugCallback(callback func(string)) ClientOption {
+	return func(c *Client) {
+		c.DebugCallBack = callback
 	}
 }
 
@@ -201,7 +210,9 @@ func (c *Client) Receive() {
 
 		switch packet[2] {
 		case PacketTypeDebug:
-			log.Printf("[DEBUG PACKET] %s", packet[3:])
+			if c.DebugCallBack != nil {
+				c.DebugCallBack(string(packet[3:]))
+			}
 		case PacketTypeServerHeartbeat:
 			log.Print("received heartbeat packet")
 		case PacketTypeEndOfSession:

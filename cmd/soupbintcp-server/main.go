@@ -27,7 +27,7 @@ func main() {
 		soupbintcp.WithPacketCallback(ReceivePacket),
 
 		// Clients can send debug packets. Not normally used.
-		soupbintcp.WithDebugCallback(DebugPacket),
+		soupbintcp.WithServerDebugCallback(DebugPacket),
 	)
 
 	sessionId := "ABCDEFGHIJ"

@@ -10,11 +10,16 @@ func ReceivePacket(packet []byte) {
 	log.Printf("Received packet: %v\n", packet)
 }
 
+func DebugPacket(text string) {
+	log.Printf("[DEBUG] %s\n", text)
+}
+
 func main() {
 	client := soupbintcp.NewClient(
-		soupbintcp.WithServer("127.0.0.1", "1337"),
+		soupbintcp.WithServer("127.0.0.1", "4000"),
 		soupbintcp.WithAuth("test", "test"),
 		soupbintcp.WithCallback(ReceivePacket),
+		soupbintcp.WithDebugCallback(DebugPacket),
 	)
 
 	if err := client.Login(); err != nil {
