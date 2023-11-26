@@ -3,6 +3,7 @@ package soupbintcp
 import (
 	"encoding/binary"
 	"fmt"
+	"io"
 	"log"
 	"net"
 	"strconv"
@@ -45,7 +46,7 @@ type Packet interface {
 
 func getNextPacket(conn net.Conn) ([]byte, error) {
 	packetLengthBuffer := make([]byte, 2)
-	_, err := conn.Read(packetLengthBuffer)
+	_, err := io.ReadFull(conn, packetLengthBuffer)
 	if err != nil {
 		log.Printf("Error reading: %v\n", err)
 		return []byte{}, err
@@ -53,8 +54,9 @@ func getNextPacket(conn net.Conn) ([]byte, error) {
 	packetLength := binary.BigEndian.Uint16(packetLengthBuffer)
 
 	buf := make([]byte, packetLength+2)
-	copy(buf[0:2], packetLengthBuffer)
-	_, err = conn.Read(buf[2:])
+	copy(buf[0:], packetLengthBuffer)
+
+	_, err = io.ReadFull(conn, buf[2:])
 	if err != nil {
 		log.Printf("Error reading: %v\n", err)
 		return []byte{}, err
