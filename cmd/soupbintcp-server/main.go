@@ -19,14 +19,16 @@ func LoginCallback(username, password string) bool {
 }
 
 func main() {
-	server := soupbintcp.Server{
-		// The Server can receive Unsequenced Data Packets from the Client
-		PacketCallback: ReceivePacket,
+	server := soupbintcp.NewServer(
 		// All client login requests will invoke this callback
-		LoginCallback: LoginCallback,
+		soupbintcp.WithLoginCallback(LoginCallback),
+
+		// The Server can receive Unsequenced Data Packets from the Client
+		soupbintcp.WithPacketCallback(ReceivePacket),
+
 		// Clients can send debug packets. Not normally used.
-		DebugCallback: DebugPacket,
-	}
+		soupbintcp.WithDebugCallback(DebugPacket),
+	)
 
 	sessionId := "ABCDEFGHIJ"
 	if err := server.CreateSession(sessionId); err != nil {

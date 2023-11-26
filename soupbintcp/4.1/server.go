@@ -24,6 +24,36 @@ type Server struct {
 	session       session
 }
 
+type ServerOption func(s *Server)
+
+func NewServer(opts ...ServerOption) *Server {
+	s := &Server{}
+
+	for _, opt := range opts {
+		opt(s)
+	}
+
+	return s
+}
+
+func WithLoginCallback(callback func(username, password string) bool) ServerOption {
+	return func(s *Server) {
+		s.LoginCallback = callback
+	}
+}
+
+func WithPacketCallback(callback func([]byte)) ServerOption {
+	return func(s *Server) {
+		s.PacketCallback = callback
+	}
+}
+
+func WithDebugCallback(callback func([]byte)) ServerOption {
+	return func(s *Server) {
+		s.DebugCallback = callback
+	}
+}
+
 func (s *Server) ListenAndServe(ip, port string) {
 	addr := fmt.Sprintf("%s:%s", ip, port)
 
