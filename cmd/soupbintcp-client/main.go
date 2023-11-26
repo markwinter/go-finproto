@@ -11,13 +11,12 @@ func ReceivePacket(packet []byte) {
 }
 
 func main() {
-	client := soupbintcp.Client{
-		PacketCallback: ReceivePacket,
-		ServerIp:       "127.0.0.1",
-		ServerPort:     "1337",
-		Username:       "test",
-		Password:       "test",
-	}
+	client := soupbintcp.NewClient(
+		soupbintcp.WithServer("127.0.0.1", "1337"),
+		soupbintcp.WithUsername("test"),
+		soupbintcp.WithPassword("test"),
+		soupbintcp.WithCallback(ReceivePacket),
+	)
 
 	if err := client.Login(); err != nil {
 		log.Printf("login failed: %v\n", err)

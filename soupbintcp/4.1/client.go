@@ -31,6 +31,49 @@ type Client struct {
 	sentMessageChan   chan bool
 }
 
+type ClientOption func(client *Client)
+
+func NewClient(opts ...ClientOption) *Client {
+	c := &Client{}
+
+	for _, opt := range opts {
+		opt(c)
+	}
+
+	return c
+}
+
+func WithUsername(username string) ClientOption {
+	return func(c *Client) {
+		c.Username = username
+	}
+}
+
+func WithPassword(password string) ClientOption {
+	return func(c *Client) {
+		c.Password = password
+	}
+}
+
+func WithCallback(callback func([]byte)) ClientOption {
+	return func(c *Client) {
+		c.PacketCallback = callback
+	}
+}
+
+func WithUnsequencedCallback(callback func([]byte)) ClientOption {
+	return func(c *Client) {
+		c.UnsequencedCallback = callback
+	}
+}
+
+func WithServer(ip, port string) ClientOption {
+	return func(c *Client) {
+		c.ServerIp = ip
+		c.ServerPort = port
+	}
+}
+
 func (c *Client) connect() error {
 	conn, err := net.Dial("tcp", fmt.Sprintf("%s:%s", c.ServerIp, c.ServerPort))
 	if err != nil {
