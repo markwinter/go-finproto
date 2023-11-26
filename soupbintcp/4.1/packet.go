@@ -90,6 +90,7 @@ func makeClientHeartbeatPacket() Packet {
 	}
 }
 
+// nolint not implemented in server yet
 func makeServerHeartbeatPacket() Packet {
 	return HeartbeatPacket{
 		Header: Header{
@@ -213,6 +214,7 @@ type SequencedDataPacket struct {
 	Message []byte
 }
 
+// nolint not implemented in server yet
 func (p SequencedDataPacket) makeSequencedDataPacket(data []byte) Packet {
 	l := make([]byte, 2)
 	binary.BigEndian.PutUint16(l, uint16(1+len(data))) // +1 is for the type field
