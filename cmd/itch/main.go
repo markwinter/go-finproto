@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/markwinter/go-finproto/itch"
+	itch "github.com/markwinter/go-finproto/itch/5.0"
 )
 
 func main() {
