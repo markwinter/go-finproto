@@ -54,7 +54,7 @@ func getNextPacket(conn net.Conn) ([]byte, error) {
 	packetLength := binary.BigEndian.Uint16(packetLengthBuffer)
 
 	buf := make([]byte, packetLength+2)
-	copy(buf[0:], packetLengthBuffer)
+	copy(buf[0:2], packetLengthBuffer)
 
 	_, err = io.ReadFull(conn, buf[2:])
 	if err != nil {
@@ -73,7 +73,7 @@ type Header struct {
 func (h Header) Bytes() []byte {
 	buf := make([]byte, 3)
 
-	copy(buf[0:], h.Length[:])
+	copy(buf[0:2], h.Length[:])
 	buf[2] = h.Type
 
 	return buf
@@ -125,8 +125,8 @@ func makeLoginAcceptedPacket(session string, sequence uint64) Packet {
 func (p LoginAcceptedPacket) Bytes() []byte {
 	buf := make([]byte, 33)
 
-	copy(buf[0:], p.Header.Bytes())
-	copy(buf[3:], p.Session[:])
+	copy(buf[0:3], p.Header.Bytes())
+	copy(buf[3:13], p.Session[:])
 	copy(buf[13:], p.SequenceNumber[:])
 
 	return buf
@@ -150,7 +150,7 @@ func makeLoginRejectedPacket(reason byte) Packet {
 func (p LoginRejectedPacket) Bytes() []byte {
 	buf := make([]byte, 4)
 
-	copy(buf[0:], p.Header.Bytes())
+	copy(buf[0:3], p.Header.Bytes())
 	buf[3] = p.Reason
 
 	return buf
@@ -188,11 +188,11 @@ func makeLoginRequestPacket(username, password, session string, sequence uint64)
 func (p LoginRequestPacket) Bytes() []byte {
 	buf := make([]byte, PacketLengthLoginRequest+2) // +2 for the packet length field
 
-	copy(buf[0:], p.Header.Bytes())
-	copy(buf[3:], p.Username[:])
-	copy(buf[9:], p.Password[:])
-	copy(buf[19:], p.Session[:])
-	copy(buf[29:], p.SequenceNumber[:])
+	copy(buf[0:3], p.Header.Bytes())
+	copy(buf[3:9], p.Username[:])
+	copy(buf[9:19], p.Password[:])
+	copy(buf[19:29], p.Session[:])
+	copy(buf[29:49], p.SequenceNumber[:])
 	copy(buf[49:], p.HeartbeatTimeout[:])
 
 	return buf
@@ -234,7 +234,7 @@ func (p SequencedDataPacket) makeSequencedDataPacket(data []byte) Packet {
 func (p SequencedDataPacket) Bytes() []byte {
 	buf := make([]byte, 3+len(p.Message)) // +3 is for header
 
-	copy(buf[0:], p.Header.Bytes())
+	copy(buf[0:3], p.Header.Bytes())
 	copy(buf[3:], []byte(p.Message))
 
 	return buf
@@ -262,7 +262,7 @@ func makeUnsequencedDataPacket(data []byte) Packet {
 func (p UnsequencedDataPacket) Bytes() []byte {
 	buf := make([]byte, 3+len(p.Message)) // +3 is for header
 
-	copy(buf[0:], p.Header.Bytes())
+	copy(buf[0:3], p.Header.Bytes())
 	copy(buf[3:], []byte(p.Message))
 
 	return buf
@@ -290,7 +290,7 @@ func makeDebugPacket(text string) Packet {
 func (p DebugPacket) Bytes() []byte {
 	buf := make([]byte, 3+len(p.Text)) // +3 is for the header
 
-	copy(buf[0:], p.Header.Bytes())
+	copy(buf[0:3], p.Header.Bytes())
 	copy(buf[3:], []byte(p.Text))
 
 	return buf
