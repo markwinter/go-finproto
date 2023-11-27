@@ -143,7 +143,7 @@ func (c *Client) Logout() {
 	packet := makeLogoutRequestPacket()
 
 	if err := binary.Write(c.conn, binary.BigEndian, packet.Bytes()); err != nil {
-		log.Println("failed sending logout request")
+		log.Printf("failed sending logout request: %v\n", err)
 	}
 
 	c.heartbeatStopChan <- true
@@ -177,7 +177,7 @@ func (c *Client) sendHeartbeat() {
 	packet := makeClientHeartbeatPacket()
 
 	if err := binary.Write(c.conn, binary.BigEndian, packet.Bytes()); err != nil {
-		log.Println("failed sending heartbeat")
+		log.Printf("failed sending heartbeat: %v\n", err)
 	}
 }
 
