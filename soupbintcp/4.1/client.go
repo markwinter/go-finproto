@@ -36,6 +36,7 @@ type Client struct {
 
 type ClientOption func(client *Client)
 
+// NewClient creates a new soupbintcp client. The default parameters can be configured using ClientOptions passed in as parameters
 func NewClient(opts ...ClientOption) *Client {
 	c := &Client{
 		session:        "",
@@ -148,7 +149,7 @@ func (c *Client) Login() error {
 	return nil
 }
 
-// Logout from the Server
+// Logout will logout from the Server
 func (c *Client) Logout() {
 	packet := makeLogoutRequestPacket()
 
@@ -255,7 +256,7 @@ func (c *Client) handleLoginAccepted(packet []byte) error {
 	return nil
 }
 
-// Send an unsequenced data packet to the Server
+// Send sends an unsequenced data packet to the Server
 func (c *Client) Send(data []byte) error {
 	packet := makeUnsequencedDataPacket(data)
 
@@ -267,7 +268,7 @@ func (c *Client) Send(data []byte) error {
 	return nil
 }
 
-// Send a debug packet with human readable text to the Server. Not normally used.
+// SendDebugMessage sends a debug packet with human readable text to the Server. Not normally used.
 func (c *Client) SendDebugMessage(text string) error {
 	packet := makeDebugPacket(text)
 
@@ -279,10 +280,12 @@ func (c *Client) SendDebugMessage(text string) error {
 	return nil
 }
 
+// CurrentSession returns the current session id
 func (c *Client) CurrentSession() string {
 	return c.session
 }
 
+// CurrentSequenceNumber returns the client's current sequence number
 func (c *Client) CurrentSequenceNumber() uint64 {
 	return c.sequenceNumber
 }
