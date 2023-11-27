@@ -20,10 +20,12 @@ func main() {
 		soupbintcp.WithAuth("test", "test"),
 		soupbintcp.WithCallback(ReceivePacket),
 		soupbintcp.WithDebugCallback(DebugPacket),
+		// use WithSession to connect to a known session, or start with a particular sequence number
+		//soupbintcp.WithSession("sessionId", 123),
 	)
 
-	// Login() will login with an empty session id and sequence number 1, as is recommended by the spec
-	// If you know the session and sequence number, use LoginSession()
+	// Login() will login with an empty session id and sequence number 0 to start receiving the most recent messages, as is recommended by the spec
+	// If you know the session and sequence number, use WithSession(sessionId, sequenceNumber) in the NewClient options
 	if err := client.Login(); err != nil {
 		log.Printf("login failed: %v\n", err)
 		return
@@ -40,7 +42,7 @@ func main() {
 		log.Printf("failed sending packet to server: %v\n", err)
 	}
 
-	// Blocks until end of session packet received. Use a goroutine to unblock
-	// Will automatically attempt to re-connect and resume the same session and sequence number
+	// Blocks until end of session packet received or can't reconnect to server. Use a goroutine to unblock.
+	// It will automatically attempt to re-connect and resume the same session and sequence number
 	client.Receive()
 }

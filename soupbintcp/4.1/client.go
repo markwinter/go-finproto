@@ -37,7 +37,10 @@ type Client struct {
 type ClientOption func(client *Client)
 
 func NewClient(opts ...ClientOption) *Client {
-	c := &Client{}
+	c := &Client{
+		session:        "",
+		sequenceNumber: 0, // 0 indicates start receiving most recently generated message
+	}
 
 	for _, opt := range opts {
 		opt(c)
@@ -78,6 +81,13 @@ func WithServer(ip, port string) ClientOption {
 	}
 }
 
+func WithSession(id string, sequence uint64) ClientOption {
+	return func(c *Client) {
+		c.session = id
+		c.sequenceNumber = sequence
+	}
+}
+
 func (c *Client) connect() error {
 	conn, err := net.Dial("tcp", fmt.Sprintf("%s:%s", c.ServerIp, c.ServerPort))
 	if err != nil {
@@ -92,23 +102,13 @@ func (c *Client) disconnect() {
 }
 
 // Login will try to connect to a new session and start receiving the first message
-// If you want to connect to a specific session then use LoginSession
+// If you want to connect to a specific session, use WithSession() in the NewClient options
 func (c *Client) Login() error {
-	return c.login("", 1)
-}
-
-// LoginSession is used to connect to a known existing session
-// and start receiving from the given sequence number
-func (c *Client) LoginSession(session string, sequence uint64) error {
-	return c.login(session, sequence)
-}
-
-func (c *Client) login(session string, sequence uint64) error {
 	if err := c.connect(); err != nil {
 		return err
 	}
 
-	loginPacket := makeLoginRequestPacket(c.Username, c.Password, session, sequence)
+	loginPacket := makeLoginRequestPacket(c.Username, c.Password, c.session, c.sequenceNumber)
 
 	if err := binary.Write(c.conn, binary.BigEndian, loginPacket.Bytes()); err != nil {
 		return err
@@ -200,7 +200,7 @@ func (c *Client) Receive() {
 			log.Printf("connection error, attempting to relogin to session %q with sequence number %d\n", c.session, c.sequenceNumber)
 			// Try to reconnect and rejoin previous session with current sequenceNumber
 			// TODO: some exponential backoff and max retry logic
-			if err := c.LoginSession(c.session, c.sequenceNumber); err != nil {
+			if err := c.Login(); err != nil {
 				log.Println("failed to login after reconnect")
 				return
 			}
@@ -271,4 +271,12 @@ func (c *Client) SendDebugMessage(text string) error {
 
 	c.sentMessageChan <- true
 	return nil
+}
+
+func (c *Client) CurrentSession() string {
+	return c.session
+}
+
+func (c *Client) CurrentSequenceNumber() uint64 {
+	return c.sequenceNumber
 }
