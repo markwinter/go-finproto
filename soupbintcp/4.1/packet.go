@@ -179,7 +179,7 @@ func makeLoginRequestPacket(username, password, session string, sequence uint64)
 	copy(packet.Username[:], username)
 	copy(packet.Password[:], password)
 	copy(packet.HeartbeatTimeout[:], fmt.Sprint(heartbeatPeriod_ms))
-	copy(packet.SequenceNumber[:], fmt.Sprintf("%20s", strconv.Itoa(int(sequence))))
+	copy(packet.SequenceNumber[:], fmt.Sprintf("%20s", strconv.FormatUint(sequence, 10)))
 	copy(packet.Session[:], fmt.Sprintf("%10s", session))
 
 	return packet
