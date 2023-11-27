@@ -7,6 +7,8 @@ import (
 )
 
 func ReceivePacket(packet []byte) {
+	// packet contains just the bytes of the message, and not the soupbintcp length and type fields
+	// it should be parsed as some other higher level protocol e.g. itch
 	log.Printf("Received packet: %v\n", packet)
 }
 

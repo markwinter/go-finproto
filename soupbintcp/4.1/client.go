@@ -12,19 +12,19 @@ import (
 )
 
 type Client struct {
-	// PacketCallback is called for every sequenced packet received. The byte slice parameter contains just the message data and should be further
+	// packetCallback is called for every sequenced packet received. The byte slice parameter contains just the message data and should be further
 	// parsed as some higher level protocol
-	PacketCallback func([]byte)
-	// UnsequencedCallback is called for every unsequenced packet received. The byte slice parameter contains just the message data and should be further
+	packetCallback func([]byte)
+	// unsequencedCallback is called for every unsequenced packet received. The byte slice parameter contains just the message data and should be further
 	// parsed as some higher level protocol
-	UnsequencedCallback func([]byte)
-	// DebugCallback is called for every debug packet received. This is not normally used
-	DebugCallBack func(string)
+	unsequencedCallback func([]byte)
+	// debugCallback is called for every debug packet received. This is not normally used
+	debugCallBack func(string)
 
-	ServerIp   string
-	ServerPort string
-	Username   string
-	Password   string
+	serverIp   string
+	serverPort string
+	username   string
+	password   string
 
 	conn              net.Conn
 	sequenceNumber    uint64
@@ -40,6 +40,10 @@ func NewClient(opts ...ClientOption) *Client {
 	c := &Client{
 		session:        "",
 		sequenceNumber: 0, // 0 indicates start receiving most recently generated message
+
+		sentMessageChan:   make(chan bool),
+		heartbeatStopChan: make(chan bool),
+		heartbeatTicker:   time.NewTicker(heartbeatPeriod_ms * time.Millisecond),
 	}
 
 	for _, opt := range opts {
@@ -49,38 +53,44 @@ func NewClient(opts ...ClientOption) *Client {
 	return c
 }
 
+// WithAuth sets the username and password to use when connecting to the Server
 func WithAuth(username, password string) ClientOption {
 	return func(c *Client) {
-		c.Username = username
-		c.Password = password
+		c.username = username
+		c.password = password
 	}
 }
 
+// WithCallback sets the callback function for every sequenced packet received
 func WithCallback(callback func([]byte)) ClientOption {
 	return func(c *Client) {
-		c.PacketCallback = callback
+		c.packetCallback = callback
 	}
 }
 
+// WithUnsequencedCallback sets the callback function for every unsequenced packet received
 func WithUnsequencedCallback(callback func([]byte)) ClientOption {
 	return func(c *Client) {
-		c.UnsequencedCallback = callback
+		c.unsequencedCallback = callback
 	}
 }
 
+// WithDebugCallback sets the callback function for every debug packet received. Not normally used
 func WithDebugCallback(callback func(string)) ClientOption {
 	return func(c *Client) {
-		c.DebugCallBack = callback
+		c.debugCallBack = callback
 	}
 }
 
+// WithServer sets the ip and port to use to connect to the Server
 func WithServer(ip, port string) ClientOption {
 	return func(c *Client) {
-		c.ServerIp = ip
-		c.ServerPort = port
+		c.serverIp = ip
+		c.serverPort = port
 	}
 }
 
+// WithSession sets the initial session and sequence number when connecting to the Server
 func WithSession(id string, sequence uint64) ClientOption {
 	return func(c *Client) {
 		c.session = id
@@ -89,7 +99,7 @@ func WithSession(id string, sequence uint64) ClientOption {
 }
 
 func (c *Client) connect() error {
-	conn, err := net.Dial("tcp", fmt.Sprintf("%s:%s", c.ServerIp, c.ServerPort))
+	conn, err := net.Dial("tcp", fmt.Sprintf("%s:%s", c.serverIp, c.serverPort))
 	if err != nil {
 		return err
 	}
@@ -108,7 +118,7 @@ func (c *Client) Login() error {
 		return err
 	}
 
-	loginPacket := makeLoginRequestPacket(c.Username, c.Password, c.session, c.sequenceNumber)
+	loginPacket := makeLoginRequestPacket(c.username, c.password, c.session, c.sequenceNumber)
 
 	if err := binary.Write(c.conn, binary.BigEndian, loginPacket.Bytes()); err != nil {
 		return err
@@ -152,10 +162,6 @@ func (c *Client) Logout() {
 }
 
 func (c *Client) runHeartbeat() {
-	c.sentMessageChan = make(chan bool)
-	c.heartbeatStopChan = make(chan bool)
-
-	c.heartbeatTicker = time.NewTicker(heartbeatPeriod_ms * time.Millisecond)
 	defer c.heartbeatTicker.Stop()
 
 	for {
@@ -210,8 +216,8 @@ func (c *Client) Receive() {
 
 		switch packet[2] {
 		case PacketTypeDebug:
-			if c.DebugCallBack != nil {
-				c.DebugCallBack(string(packet[3:]))
+			if c.debugCallBack != nil {
+				c.debugCallBack(string(packet[3:]))
 			}
 		case PacketTypeServerHeartbeat:
 			log.Print("received heartbeat packet")
@@ -220,12 +226,12 @@ func (c *Client) Receive() {
 			return
 		case PacketTypeSequencedData:
 			c.sequenceNumber++
-			if c.PacketCallback != nil {
-				c.PacketCallback(packet[3:])
+			if c.packetCallback != nil {
+				c.packetCallback(packet[3:])
 			}
 		case PacketTypeUnsequencedData:
-			if c.UnsequencedCallback != nil {
-				c.UnsequencedCallback(packet[3:])
+			if c.unsequencedCallback != nil {
+				c.unsequencedCallback(packet[3:])
 			}
 		default:
 			log.Print("unknown packet type received")
