@@ -17,7 +17,17 @@ type TradeBroken struct {
 	MatchNumber    uint64
 }
 
-func MakeTradeBroken(data []byte) Message {
+func (t TradeBroken) Type() uint8 {
+	return MESSAGE_TRADE_BROKEN
+}
+
+func (t TradeBroken) Bytes() []byte {
+	data := make([]byte, tradeBrokenSize)
+	// TODO: implement
+	return data
+}
+
+func ParseTradeBroken(data []byte) TradeBroken {
 	locate := binary.BigEndian.Uint16(data[1:3])
 	tracking := binary.BigEndian.Uint16(data[3:5])
 	data[3] = 0

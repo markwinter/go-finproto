@@ -10,13 +10,6 @@ import (
 	"time"
 )
 
-type SystemEvent struct {
-	Timestamp      time.Duration
-	StockLocate    uint16
-	TrackingNumber uint16
-	EventCode      EventCode
-}
-
 type EventCode uint8
 
 const (
@@ -28,7 +21,33 @@ const (
 	EVENT_END_MESSAGES   EventCode = 'C'
 )
 
-func MakeSystemEvent(data []byte) Message {
+type SystemEvent struct {
+	Timestamp      time.Duration
+	StockLocate    uint16
+	TrackingNumber uint16
+	EventCode      EventCode
+}
+
+func (e SystemEvent) Type() uint8 {
+	return MESSAGE_SYSTEM_EVENT
+}
+
+func (e SystemEvent) Bytes() []byte {
+	data := make([]byte, systemEventSize)
+
+	data[0] = MESSAGE_SYSTEM_EVENT
+	binary.BigEndian.PutUint16(data[1:3], 0)
+
+	// Order of these fields are important. We write timestamp to 3:11 first to let us write a uint64, then overwrite 3:5 with tracking number
+	binary.BigEndian.PutUint64(data[3:11], uint64(e.Timestamp.Nanoseconds()))
+	binary.BigEndian.PutUint16(data[3:5], e.TrackingNumber)
+
+	data[11] = byte(e.EventCode)
+
+	return data
+}
+
+func ParseSystemEvent(data []byte) SystemEvent {
 	locate := binary.BigEndian.Uint16(data[1:3])
 	tracking := binary.BigEndian.Uint16(data[3:5])
 	data[3] = 0
@@ -41,6 +60,15 @@ func MakeSystemEvent(data []byte) Message {
 		TrackingNumber: tracking,
 		Timestamp:      time.Duration(t),
 		EventCode:      event,
+	}
+}
+
+func MakeSystemEvent(timestamp time.Duration, trackingNumber uint16, eventCode EventCode) SystemEvent {
+	return SystemEvent{
+		Timestamp:      timestamp,
+		StockLocate:    0, // StockLocate for System Event is always 0
+		TrackingNumber: trackingNumber,
+		EventCode:      eventCode,
 	}
 }
 

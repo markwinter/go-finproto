@@ -145,7 +145,17 @@ type StockDirectory struct {
 	FinancialStatusIndicator    FinancialStatusIndicator
 }
 
-func MakeStockDirectory(data []byte) Message {
+func (s StockDirectory) Type() uint8 {
+	return MESSAGE_STOCK_DIRECTORY
+}
+
+func (s StockDirectory) Bytes() []byte {
+	data := make([]byte, stockDirectorySize)
+	// TODO: implement
+	return data
+}
+
+func ParseStockDirectory(data []byte) StockDirectory {
 	locate := binary.BigEndian.Uint16(data[1:3])
 	tracking := binary.BigEndian.Uint16(data[3:5])
 	data[3] = 0

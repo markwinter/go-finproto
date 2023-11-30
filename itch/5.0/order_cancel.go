@@ -18,7 +18,17 @@ type OrderCancel struct {
 	TrackingNumber uint16
 }
 
-func MakeOrderCancel(data []byte) Message {
+func (o OrderCancel) Type() uint8 {
+	return MESSAGE_ORDER_CANCEL
+}
+
+func (o OrderCancel) Bytes() []byte {
+	data := make([]byte, orderCancelSize)
+	// TODO: implement
+	return data
+}
+
+func ParseOrderCancel(data []byte) OrderCancel {
 	locate := binary.BigEndian.Uint16(data[1:3])
 	tracking := binary.BigEndian.Uint16(data[3:5])
 	data[3] = 0

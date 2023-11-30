@@ -27,7 +27,17 @@ type RegSho struct {
 	Action         RegShoAction
 }
 
-func MakeRegSho(data []byte) Message {
+func (r RegSho) Type() uint8 {
+	return MESSAGE_REG_SHO
+}
+
+func (r RegSho) Bytes() []byte {
+	data := make([]byte, regShoSize)
+	// TODO: implement
+	return data
+}
+
+func ParseRegSho(data []byte) RegSho {
 	locate := binary.BigEndian.Uint16(data[1:3])
 	tracking := binary.BigEndian.Uint16(data[3:5])
 	data[3] = 0

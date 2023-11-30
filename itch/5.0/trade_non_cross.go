@@ -23,7 +23,17 @@ type TradeNonCross struct {
 	OrderIndicator OrderIndicator
 }
 
-func MakeTradeNonCross(data []byte) Message {
+func (t TradeNonCross) Type() uint8 {
+	return MESSAGE_TRADE_NON_CROSS
+}
+
+func (t TradeNonCross) Bytes() []byte {
+	data := make([]byte, tradeNonCrossSize)
+	// TODO: implement
+	return data
+}
+
+func ParseTradeNonCross(data []byte) TradeNonCross {
 	locate := binary.BigEndian.Uint16(data[1:3])
 	tracking := binary.BigEndian.Uint16(data[3:5])
 	data[3] = 0

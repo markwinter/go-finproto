@@ -43,7 +43,17 @@ type ParticipantPosition struct {
 	State          MMState
 }
 
-func MakeParticipantPosition(data []byte) Message {
+func (p ParticipantPosition) Type() uint8 {
+	return MESSAGE_PARTICIPANT_POSITION
+}
+
+func (p ParticipantPosition) Bytes() []byte {
+	data := make([]byte, participantPositionSize)
+	// TODO: implement
+	return data
+}
+
+func ParseParticipantPosition(data []byte) ParticipantPosition {
 	locate := binary.BigEndian.Uint16(data[1:3])
 	tracking := binary.BigEndian.Uint16(data[3:5])
 	data[3] = 0

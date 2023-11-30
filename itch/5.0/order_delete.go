@@ -17,7 +17,17 @@ type OrderDelete struct {
 	Reference      uint64
 }
 
-func MakeOrderDelete(data []byte) Message {
+func (o OrderDelete) Type() uint8 {
+	return MESSAGE_ORDER_DELETE
+}
+
+func (o OrderDelete) Bytes() []byte {
+	data := make([]byte, orderDeleteSize)
+	// TODO: implement
+	return data
+}
+
+func ParseOrderDelete(data []byte) OrderDelete {
 	locate := binary.BigEndian.Uint16(data[1:3])
 	tracking := binary.BigEndian.Uint16(data[3:5])
 	data[3] = 0

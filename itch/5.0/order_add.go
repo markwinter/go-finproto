@@ -29,6 +29,16 @@ type OrderAdd struct {
 	OrderIndicator OrderIndicator
 }
 
+func (o OrderAdd) Type() uint8 {
+	return MESSAGE_ORDER_ADD
+}
+
+func (o OrderAdd) Bytes() []byte {
+	data := make([]byte, orderAddSize)
+	// TODO: implement
+	return data
+}
+
 type OrderAddAttributed struct {
 	Stock          string
 	Attribution    string
@@ -41,7 +51,17 @@ type OrderAddAttributed struct {
 	OrderIndicator OrderIndicator
 }
 
-func MakeOrderAdd(data []byte) Message {
+func (o OrderAddAttributed) Type() uint8 {
+	return MESSAGE_ORDER_ADD_ATTRIBUTED
+}
+
+func (o OrderAddAttributed) Bytes() []byte {
+	data := make([]byte, orderAddAttrSize)
+	// TODO: implement
+	return data
+}
+
+func ParseOrderAdd(data []byte) OrderAdd {
 	locate := binary.BigEndian.Uint16(data[1:3])
 	tracking := binary.BigEndian.Uint16(data[3:5])
 	data[3] = 0
@@ -60,7 +80,7 @@ func MakeOrderAdd(data []byte) Message {
 	}
 }
 
-func MakeOrderAddAttributed(data []byte) Message {
+func ParseOrderAddAttributed(data []byte) OrderAddAttributed {
 	locate := binary.BigEndian.Uint16(data[1:3])
 	tracking := binary.BigEndian.Uint16(data[3:5])
 	data[3] = 0

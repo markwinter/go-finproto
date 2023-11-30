@@ -32,7 +32,17 @@ type OperationalHalt struct {
 	HaltAction     HaltAction
 }
 
-func MakeOperationalHalt(data []byte) Message {
+func (o OperationalHalt) Type() uint8 {
+	return MESSAGE_OPERATIONAL_HALT
+}
+
+func (o OperationalHalt) Bytes() []byte {
+	data := make([]byte, operationalHaltSize)
+	// TODO: implement
+	return data
+}
+
+func ParseOperationalHalt(data []byte) OperationalHalt {
 	locate := binary.BigEndian.Uint16(data[1:3])
 	tracking := binary.BigEndian.Uint16(data[3:5])
 	data[3] = 0

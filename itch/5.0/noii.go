@@ -35,7 +35,17 @@ type Noii struct {
 	VariationIndicator uint8
 }
 
-func MakeNoii(data []byte) Message {
+func (n Noii) Type() uint8 {
+	return MESSAGE_NOII
+}
+
+func (n Noii) Bytes() []byte {
+	data := make([]byte, noiiSize)
+	// TODO: implement
+	return data
+}
+
+func ParseNoii(data []byte) Noii {
 	locate := binary.BigEndian.Uint16(data[1:3])
 	tracking := binary.BigEndian.Uint16(data[3:5])
 	data[3] = 0

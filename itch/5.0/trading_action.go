@@ -30,7 +30,17 @@ type StockTradingAction struct {
 	Reserved       uint8
 }
 
-func MakeStockTradingAction(data []byte) Message {
+func (t StockTradingAction) Type() uint8 {
+	return MESSAGE_STOCK_TRADING_ACTION
+}
+
+func (t StockTradingAction) Bytes() []byte {
+	data := make([]byte, stockTradingActionSize)
+	// TODO: implement
+	return data
+}
+
+func ParseStockTradingAction(data []byte) StockTradingAction {
 	locate := binary.BigEndian.Uint16(data[1:3])
 	tracking := binary.BigEndian.Uint16(data[3:5])
 	data[3] = 0

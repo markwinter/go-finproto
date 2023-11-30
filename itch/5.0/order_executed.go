@@ -19,6 +19,16 @@ type OrderExecuted struct {
 	TrackingNumber uint16
 }
 
+func (o OrderExecuted) Type() uint8 {
+	return MESSAGE_ORDER_EXECUTED
+}
+
+func (o OrderExecuted) Bytes() []byte {
+	data := make([]byte, orderExecutedSize)
+	// TODO: implement
+	return data
+}
+
 type OrderExecutedPrice struct {
 	Timestamp      time.Duration
 	Reference      uint64
@@ -30,7 +40,17 @@ type OrderExecutedPrice struct {
 	Printable      bool
 }
 
-func MakeOrderExecuted(data []byte) Message {
+func (o OrderExecutedPrice) Type() uint8 {
+	return MESSAGE_ORDER_EXECUTED_PRICE
+}
+
+func (o OrderExecutedPrice) Bytes() []byte {
+	data := make([]byte, orderExecutedPriceSize)
+	// TODO: implement
+	return data
+}
+
+func ParseOrderExecuted(data []byte) OrderExecuted {
 	locate := binary.BigEndian.Uint16(data[1:3])
 	tracking := binary.BigEndian.Uint16(data[3:5])
 	data[3] = 0
@@ -47,7 +67,7 @@ func MakeOrderExecuted(data []byte) Message {
 	}
 }
 
-func MakeOrderExecutedPrice(data []byte) Message {
+func ParseOrderExecutedPrice(data []byte) OrderExecutedPrice {
 	locate := binary.BigEndian.Uint16(data[1:3])
 	tracking := binary.BigEndian.Uint16(data[3:5])
 	data[3] = 0

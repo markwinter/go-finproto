@@ -28,7 +28,17 @@ type IpoQuotation struct {
 	Price          uint32
 }
 
-func MakeIpoQuotation(data []byte) Message {
+func (i IpoQuotation) Type() uint8 {
+	return MESSAGE_IPO_QUOTATION
+}
+
+func (i IpoQuotation) Bytes() []byte {
+	data := make([]byte, ipoQuotationSize)
+	// TODO: implement
+	return data
+}
+
+func ParseIpoQuotation(data []byte) IpoQuotation {
 	locate := binary.BigEndian.Uint16(data[1:3])
 	tracking := binary.BigEndian.Uint16(data[3:5])
 	data[3] = 0

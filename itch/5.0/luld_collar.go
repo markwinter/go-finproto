@@ -22,7 +22,17 @@ type LuldCollar struct {
 	Extension      uint32
 }
 
-func MakeLuldCollar(data []byte) Message {
+func (l LuldCollar) Type() uint8 {
+	return MESSAGE_LULD_COLLAR
+}
+
+func (l LuldCollar) Bytes() []byte {
+	data := make([]byte, luldSize)
+	// TODO: implement
+	return data
+}
+
+func ParseLuldCollar(data []byte) LuldCollar {
 	locate := binary.BigEndian.Uint16(data[1:3])
 	tracking := binary.BigEndian.Uint16(data[3:5])
 	data[3] = 0

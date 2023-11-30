@@ -31,7 +31,17 @@ type TradeCross struct {
 	CrossType      CrossType
 }
 
-func MakeTradeCross(data []byte) Message {
+func (t TradeCross) Type() uint8 {
+	return MESSAGE_TRADE_CROSS
+}
+
+func (t TradeCross) Bytes() []byte {
+	data := make([]byte, tradeCrossSize)
+	// TODO: implement
+	return data
+}
+
+func ParseTradeCross(data []byte) TradeCross {
 	locate := binary.BigEndian.Uint16(data[1:3])
 	tracking := binary.BigEndian.Uint16(data[3:5])
 	data[3] = 0

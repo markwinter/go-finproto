@@ -37,35 +37,35 @@ const (
 	MESSAGE_NOII                 uint8 = 'I'
 	MESSAGE_RPII                 uint8 = 'N'
 
-	/*
-		// Message lengths are fixed sized.
-		// Can probably be used later to increase performance slightly
-		systemEventSize         = 12
-		stockDirectorySize      = 39
-		stockTradingActionSize  = 25
-		regShoSize              = 20
-		participantPositionSize = 26
-		mwcbLevelSize           = 35
-		mwcbStatusSize          = 12
-		ipoQuotationSize        = 28
-		luldSize                = 35
-		operationalHaltSize     = 21
-		orderAddSize            = 36
-		orderAddAttrSize        = 40
-		orderModifySize         = 31
-		orderExecutedSize       = 36
-		orderCancleSize         = 23
-		orderDeleteSize         = 19
-		orderReplaceSize        = 35
-		tradeNonCrossSize       = 44
-		tradeCrossSize          = 40
-		brokenTradeSize         = 19
-		noiiSize                = 50
-		rpiiSize                = 20
-	*/
+	// Message lengths are fixed sized.
+	systemEventSize         = 12
+	stockDirectorySize      = 39
+	stockTradingActionSize  = 25
+	regShoSize              = 20
+	participantPositionSize = 26
+	mwcbLevelSize           = 35
+	mwcbStatusSize          = 12
+	ipoQuotationSize        = 28
+	luldSize                = 35
+	operationalHaltSize     = 21
+	orderAddSize            = 36
+	orderAddAttrSize        = 40
+	orderExecutedSize       = 31
+	orderExecutedPriceSize  = 36
+	orderCancelSize         = 23
+	orderDeleteSize         = 19
+	orderReplaceSize        = 35
+	tradeNonCrossSize       = 44
+	tradeCrossSize          = 40
+	tradeBrokenSize         = 19
+	noiiSize                = 50
+	rpiiSize                = 20
 )
 
-type Message interface{}
+type Message interface {
+	Bytes() []byte
+	Type() uint8
+}
 
 // ParseFile parses ITCH messages from an uncompressed file. It uses ParseReader internally
 func ParseFile(path string, config Configuration) ([]Message, error) {
@@ -190,55 +190,55 @@ func ParseMany(data []byte, config Configuration) ([]Message, error) {
 
 // Parse will parse a single ITCH message
 func Parse(data []byte) Message {
-	return parseData(data[2], data)
+	return parseData(data[0], data)
 }
 
 func parseData(msgType byte, data []byte) Message {
 	switch msgType {
 	case MESSAGE_SYSTEM_EVENT:
-		return MakeSystemEvent(data)
+		return ParseSystemEvent(data)
 	case MESSAGE_STOCK_DIRECTORY:
-		return MakeStockDirectory(data)
+		return ParseStockDirectory(data)
 	case MESSAGE_STOCK_TRADING_ACTION:
-		return MakeStockTradingAction(data)
+		return ParseStockTradingAction(data)
 	case MESSAGE_REG_SHO:
-		return MakeRegSho(data)
+		return ParseRegSho(data)
 	case MESSAGE_PARTICIPANT_POSITION:
-		return MakeParticipantPosition(data)
+		return ParseParticipantPosition(data)
 	case MESSAGE_MWCB_LEVEL:
-		return MakeMwcbLevel(data)
+		return ParseMwcbLevel(data)
 	case MESSAGE_MWCB_STATUS:
-		return MakeMwcbStatus(data)
+		return ParseMwcbStatus(data)
 	case MESSAGE_IPO_QUOTATION:
-		return MakeIpoQuotation(data)
+		return ParseIpoQuotation(data)
 	case MESSAGE_LULD_COLLAR:
-		return MakeLuldCollar(data)
+		return ParseLuldCollar(data)
 	case MESSAGE_OPERATIONAL_HALT:
-		return MakeOperationalHalt(data)
+		return ParseOperationalHalt(data)
 	case MESSAGE_ORDER_ADD:
-		return MakeOrderAdd(data)
+		return ParseOrderAdd(data)
 	case MESSAGE_ORDER_ADD_ATTRIBUTED:
-		return MakeOrderAddAttributed(data)
+		return ParseOrderAddAttributed(data)
 	case MESSAGE_ORDER_EXECUTED:
-		return MakeOrderExecuted(data)
+		return ParseOrderExecuted(data)
 	case MESSAGE_ORDER_EXECUTED_PRICE:
-		return MakeOrderExecutedPrice(data)
+		return ParseOrderExecutedPrice(data)
 	case MESSAGE_ORDER_CANCEL:
-		return MakeOrderCancel(data)
+		return ParseOrderCancel(data)
 	case MESSAGE_ORDER_DELETE:
-		return MakeOrderDelete(data)
+		return ParseOrderDelete(data)
 	case MESSAGE_ORDER_REPLACE:
-		return MakeOrderReplace(data)
+		return ParseOrderReplace(data)
 	case MESSAGE_TRADE_NON_CROSS:
-		return MakeTradeNonCross(data)
+		return ParseTradeNonCross(data)
 	case MESSAGE_TRADE_CROSS:
-		return MakeTradeCross(data)
+		return ParseTradeCross(data)
 	case MESSAGE_TRADE_BROKEN:
-		return MakeTradeBroken(data)
+		return ParseTradeBroken(data)
 	case MESSAGE_NOII:
-		return MakeNoii(data)
+		return ParseNoii(data)
 	case MESSAGE_RPII:
-		return MakeRpii(data)
+		return ParseRpii(data)
 	default:
 		return nil
 	}

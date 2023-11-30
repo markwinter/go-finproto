@@ -28,7 +28,17 @@ type Rpii struct {
 	InterestFlag   RpiInterestFlag
 }
 
-func MakeRpii(data []byte) Message {
+func (r Rpii) Type() uint8 {
+	return MESSAGE_RPII
+}
+
+func (r Rpii) Bytes() []byte {
+	data := make([]byte, rpiiSize)
+	// TODO: implement
+	return data
+}
+
+func ParseRpii(data []byte) Rpii {
 	locate := binary.BigEndian.Uint16(data[1:3])
 	tracking := binary.BigEndian.Uint16(data[3:5])
 	data[3] = 0

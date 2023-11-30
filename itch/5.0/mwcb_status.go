@@ -17,7 +17,17 @@ type MwcbStatus struct {
 	BreachedLevel  uint8
 }
 
-func MakeMwcbStatus(data []byte) Message {
+func (m MwcbStatus) Type() uint8 {
+	return MESSAGE_MWCB_STATUS
+}
+
+func (m MwcbStatus) Bytes() []byte {
+	data := make([]byte, mwcbStatusSize)
+	// TODO: implement
+	return data
+}
+
+func ParseMwcbStatus(data []byte) MwcbStatus {
 	locate := binary.BigEndian.Uint16(data[1:3])
 	tracking := binary.BigEndian.Uint16(data[3:5])
 	data[3] = 0

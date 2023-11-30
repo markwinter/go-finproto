@@ -20,7 +20,17 @@ type OrderReplace struct {
 	Price             uint32
 }
 
-func MakeOrderReplace(data []byte) Message {
+func (o OrderReplace) Type() uint8 {
+	return MESSAGE_ORDER_REPLACE
+}
+
+func (o OrderReplace) Bytes() []byte {
+	data := make([]byte, orderReplaceSize)
+	// TODO: implement
+	return data
+}
+
+func ParseOrderReplace(data []byte) OrderReplace {
 	locate := binary.BigEndian.Uint16(data[1:3])
 	tracking := binary.BigEndian.Uint16(data[3:5])
 	data[3] = 0
