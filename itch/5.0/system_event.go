@@ -13,6 +13,10 @@ import (
 type EventCode uint8
 
 const (
+	MESSAGE_SYSTEM_EVENT uint8 = 'S'
+
+	systemEventSize = 12
+
 	EVENT_START_MESSAGES EventCode = 'O'
 	EVENT_START_HOURS    EventCode = 'S'
 	EVENT_START_MARKET   EventCode = 'Q'

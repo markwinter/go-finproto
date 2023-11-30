@@ -10,11 +10,11 @@ import (
 	"io"
 	"log"
 	"os"
+	"slices"
 	"time"
 )
 
 const (
-	MESSAGE_SYSTEM_EVENT         uint8 = 'S'
 	MESSAGE_STOCK_DIRECTORY      uint8 = 'R'
 	MESSAGE_STOCK_TRADING_ACTION uint8 = 'H'
 	MESSAGE_REG_SHO              uint8 = 'Y'
@@ -38,7 +38,6 @@ const (
 	MESSAGE_RPII                 uint8 = 'N'
 
 	// Message lengths are fixed sized.
-	systemEventSize         = 12
 	stockDirectorySize      = 39
 	stockTradingActionSize  = 25
 	regShoSize              = 20
@@ -62,13 +61,13 @@ const (
 	rpiiSize                = 20
 )
 
-type Message interface {
+type ItchMessage interface {
 	Bytes() []byte
 	Type() uint8
 }
 
 // ParseFile parses ITCH messages from an uncompressed file. It uses ParseReader internally
-func ParseFile(path string, config Configuration) ([]Message, error) {
+func ParseFile(path string, config Configuration) ([]ItchMessage, error) {
 	file, err := os.Open(path)
 	if err != nil {
 		return nil, err
@@ -82,54 +81,65 @@ func ParseFile(path string, config Configuration) ([]Message, error) {
 		reader = bufio.NewReader(file)
 	}
 
-	log.Printf("Using buffer size: %v", reader.Size())
+	log.Printf("Using buffer size: %v\n", reader.Size())
 
 	return ParseReader(reader, config)
 }
 
 // ParseReader parses ITCH messages from a bufio.Reader
-func ParseReader(reader *bufio.Reader, config Configuration) ([]Message, error) {
-	messages := []Message{}
-	messageCount := 0
+func ParseReader(reader *bufio.Reader, config Configuration) ([]ItchMessage, error) {
+	messages := []ItchMessage{}
 
 	start := time.Now()
 
 	for {
-		if config.MaxMessages > 0 && messageCount >= config.MaxMessages {
+		if config.MaxMessages > 0 && len(messages) >= config.MaxMessages {
 			break
 		}
 
-		msgLengthBuffer, err := reader.Peek(2)
-		if err == io.EOF {
+		var msgLength int
+
+		if config.LengthFieldPrefixed {
+			msgLengthBuffer, err := reader.Peek(2)
+			if err == io.EOF {
+				break
+			}
+			if err != nil {
+				return messages, err
+			}
+
+			_, err = reader.Discard(2)
+			if err != nil {
+				return messages, err
+			}
+
+			msgLength = int(uint16(msgLengthBuffer[1]) | uint16(msgLengthBuffer[0])<<8)
+
+		} else {
+			msgTypeBuffer, err := reader.Peek(1)
+			if err == io.EOF {
+				break
+			}
+			if err != nil {
+				return messages, err
+			}
+
+			msgLength = getMessageSize(msgTypeBuffer[0])
+		}
+
+		data := make([]byte, msgLength)
+
+		n, err := io.ReadFull(reader, data)
+		if n == 0 || err == io.EOF {
 			break
 		}
 		if err != nil {
 			return messages, err
 		}
-		_, err = reader.Discard(2)
-		if err != nil {
-			return messages, err
-		}
-
-		msgLength := uint16(msgLengthBuffer[1]) | uint16(msgLengthBuffer[0])<<8
-
-		data, err := reader.Peek(int(msgLength))
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			return messages, err
-		}
-		_, err = reader.Discard(int(msgLength))
-		if err != nil {
-			return messages, err
-		}
-
-		messageCount++
 
 		// If user configured MessageTypes then only parse messages they want
 		if len(config.MessageTypes) != 0 {
-			if !contains(config.MessageTypes, data[0]) {
+			if !slices.Contains(config.MessageTypes, data[0]) {
 				continue
 			}
 		}
@@ -138,62 +148,117 @@ func ParseReader(reader *bufio.Reader, config Configuration) ([]Message, error) 
 	}
 
 	elapsed := time.Since(start)
-	log.Printf("Parsed %d messages in %s", messageCount, elapsed)
-	log.Printf("Parse rate: %.2f messages/s", float64(messageCount)/elapsed.Seconds())
+	log.Printf("Parsed %d messages in %s", len(messages), elapsed)
+	log.Printf("Parse rate: %.2f messages/s", float64(len(messages))/elapsed.Seconds())
 
 	return messages, nil
 }
 
 // ParseMany parses multiple ITCH messages from byte data already loaded into memory
-func ParseMany(data []byte, config Configuration) ([]Message, error) {
-	messages := []Message{}
-	messageCount := 0
+func ParseMany(data []byte, config Configuration) ([]ItchMessage, error) {
+	messages := []ItchMessage{}
 
 	start := time.Now()
 
-	msgLength := uint16(0)
 	dp := 0
 
 	for {
-		if config.MaxMessages > 0 && messageCount >= config.MaxMessages {
-			break
-		}
-
-		dp += int(msgLength)
 		if dp >= len(data) {
 			// Reached end of data
 			break
 		}
 
-		// This is quicker than using binary.BigEndian.Uint16 in this loop
-		msgLength = uint16(data[dp+1]) | uint16(data[dp])<<8
-		dp += 2
+		if config.MaxMessages > 0 && len(messages) >= config.MaxMessages {
+			break
+		}
 
-		messageCount++
+		var msgLength int
+		if config.LengthFieldPrefixed {
+			msgLength = int(uint16(data[dp+1]) | uint16(data[dp])<<8)
+		} else {
+			msgLength = getMessageSize(data[dp])
+		}
+
+		startOfMessage := dp
+		endOfMessage := startOfMessage + msgLength
+
+		dp += int(msgLength)
 
 		// If user configured MessageTypes then only parse messages they want
 		if len(config.MessageTypes) != 0 {
-			if !contains(config.MessageTypes, data[dp]) {
+			if !slices.Contains(config.MessageTypes, data[startOfMessage]) {
 				continue
 			}
 		}
 
-		messages = append(messages, parseData(data[dp], data[dp:dp+int(msgLength)]))
+		messages = append(messages, parseData(data[startOfMessage], data[startOfMessage:endOfMessage]))
 	}
 
 	elapsed := time.Since(start)
-	log.Printf("Parsed %d messages in %s", messageCount, elapsed)
-	log.Printf("Parse rate: %.2f messages/s", float64(messageCount)/elapsed.Seconds())
+
+	log.Printf("Parsed %d messages in %s", len(messages), elapsed)
+	log.Printf("Parse rate: %.2f messages/s", float64(len(messages))/elapsed.Seconds())
 
 	return messages, nil
 }
 
-// Parse will parse a single ITCH message
-func Parse(data []byte) Message {
+// Parse will parse a single ITCH message - it should not have a length field prefixed, just give the actual ITCH message
+func Parse(data []byte) ItchMessage {
 	return parseData(data[0], data)
 }
 
-func parseData(msgType byte, data []byte) Message {
+func getMessageSize(msgType byte) int {
+	switch msgType {
+	case MESSAGE_SYSTEM_EVENT:
+		return systemEventSize
+	case MESSAGE_STOCK_DIRECTORY:
+		return stockDirectorySize
+	case MESSAGE_STOCK_TRADING_ACTION:
+		return stockTradingActionSize
+	case MESSAGE_REG_SHO:
+		return regShoSize
+	case MESSAGE_PARTICIPANT_POSITION:
+		return participantPositionSize
+	case MESSAGE_MWCB_LEVEL:
+		return mwcbLevelSize
+	case MESSAGE_MWCB_STATUS:
+		return mwcbStatusSize
+	case MESSAGE_IPO_QUOTATION:
+		return ipoQuotationSize
+	case MESSAGE_LULD_COLLAR:
+		return luldSize
+	case MESSAGE_OPERATIONAL_HALT:
+		return operationalHaltSize
+	case MESSAGE_ORDER_ADD:
+		return orderAddSize
+	case MESSAGE_ORDER_ADD_ATTRIBUTED:
+		return orderAddAttrSize
+	case MESSAGE_ORDER_EXECUTED:
+		return orderExecutedSize
+	case MESSAGE_ORDER_EXECUTED_PRICE:
+		return orderExecutedPriceSize
+	case MESSAGE_ORDER_CANCEL:
+		return orderCancelSize
+	case MESSAGE_ORDER_DELETE:
+		return orderDeleteSize
+	case MESSAGE_ORDER_REPLACE:
+		return orderReplaceSize
+	case MESSAGE_TRADE_NON_CROSS:
+		return tradeNonCrossSize
+	case MESSAGE_TRADE_CROSS:
+		return tradeCrossSize
+	case MESSAGE_TRADE_BROKEN:
+		return tradeBrokenSize
+	case MESSAGE_NOII:
+		return noiiSize
+	case MESSAGE_RPII:
+		return rpiiSize
+	default:
+		return 0
+	}
+}
+
+func parseData(msgType byte, data []byte) ItchMessage {
 	switch msgType {
 	case MESSAGE_SYSTEM_EVENT:
 		return ParseSystemEvent(data)
@@ -242,14 +307,4 @@ func parseData(msgType byte, data []byte) Message {
 	default:
 		return nil
 	}
-}
-
-func contains(l []byte, x byte) bool {
-	for i := 0; i < len(l); i++ {
-		if l[i] == x {
-			return true
-		}
-	}
-
-	return false
 }

@@ -18,17 +18,23 @@ func main() {
 
 	config := itch.Configuration{
 		MessageTypes: []byte{
-			itch.MESSAGE_STOCK_DIRECTORY,
-			itch.MESSAGE_PARTICIPANT_POSITION,
+			itch.MESSAGE_SYSTEM_EVENT,
+			//itch.MESSAGE_STOCK_DIRECTORY,
+			//itch.MESSAGE_PARTICIPANT_POSITION,
 		},
-		MaxMessages:    0,
-		ReadBufferSize: itch.OneGB,
+		MaxMessages:         0,
+		ReadBufferSize:      itch.OneGB,
+		LengthFieldPrefixed: true, // The sample file from NASDAQ FTP has a two-byte length field prefixed to each ITCH message
 	}
 
-	_, err := itch.ParseFile(*filePath, config)
+	log.Printf("Parsing file: %s", *filePath)
+
+	messages, err := itch.ParseFile(*filePath, config)
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	log.Printf("%v", messages)
 
 	/*
 		// If you have a lot of memory or a small file then read the whole file into memory
