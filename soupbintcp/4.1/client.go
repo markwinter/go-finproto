@@ -9,6 +9,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	backoff "github.com/cenkalti/backoff/v4"
 )
 
 type Client struct {
@@ -32,12 +34,21 @@ type Client struct {
 	heartbeatTicker   *time.Ticker
 	heartbeatStopChan chan bool
 	sentMessageChan   chan bool
+
+	backoff *backoff.ExponentialBackOff
 }
 
 type ClientOption func(client *Client)
 
 // NewClient creates a new soupbintcp client. The default parameters can be configured using ClientOptions passed in as parameters
 func NewClient(opts ...ClientOption) *Client {
+	b := backoff.NewExponentialBackOff(
+		backoff.WithInitialInterval(100*time.Millisecond),
+		backoff.WithMaxElapsedTime(30*time.Second),
+		backoff.WithMaxInterval(5*time.Second),
+		backoff.WithMultiplier(1.5),
+	)
+
 	c := &Client{
 		session:        "",
 		sequenceNumber: 0, // 0 indicates start receiving most recently generated message
@@ -45,6 +56,8 @@ func NewClient(opts ...ClientOption) *Client {
 		sentMessageChan:   make(chan bool),
 		heartbeatStopChan: make(chan bool),
 		heartbeatTicker:   time.NewTicker(heartbeatPeriod_ms * time.Millisecond),
+
+		backoff: b,
 	}
 
 	for _, opt := range opts {
@@ -188,6 +201,21 @@ func (c *Client) sendHeartbeat() {
 	}
 }
 
+func (c *Client) reconnect() error {
+	notify := func(err error, t time.Duration) {
+		log.Printf("retrying connetion in: %s\n", t)
+	}
+
+	log.Printf("connection error, attempting to relogin to session %q with sequence number %d\n", c.session, c.sequenceNumber)
+
+	if err := backoff.RetryNotify(c.Login, c.backoff, notify); err != nil {
+		log.Println("failed to reconnect to the server after max retries")
+		return err
+	}
+
+	return nil
+}
+
 // Receive will start listening for packets from the Server. Any sequenced or unsequenced data
 // packets will be passed to your PacketCallback function. Receive will also attempt to automatically
 // reconnect to the Server and rejoin the previous session with the current message sequence number.
@@ -198,17 +226,15 @@ func (c *Client) Receive() {
 		// The server should be sending heartbeats every 1 * heartbeatPeriod
 		err := c.conn.SetReadDeadline(time.Now().Add(heartbeatPeriod_ms * time.Millisecond * 2))
 		if err != nil {
-			log.Println("error setting read deadline")
+			if err := c.reconnect(); err != nil {
+				return
+			}
 			continue
 		}
 
 		packet, err := getNextPacket(c.conn)
 		if err != nil {
-			log.Printf("connection error, attempting to relogin to session %q with sequence number %d\n", c.session, c.sequenceNumber)
-			// Try to reconnect and rejoin previous session with current sequenceNumber
-			// TODO: some exponential backoff and max retry logic
-			if err := c.Login(); err != nil {
-				log.Println("failed to login after reconnect")
+			if err := c.reconnect(); err != nil {
 				return
 			}
 
