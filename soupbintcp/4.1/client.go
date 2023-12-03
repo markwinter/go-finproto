@@ -31,7 +31,6 @@ type Client struct {
 	conn              net.Conn
 	sequenceNumber    uint64
 	session           string
-	heartbeatTicker   *time.Ticker
 	heartbeatStopChan chan bool
 	sentMessageChan   chan bool
 
@@ -47,6 +46,7 @@ func NewClient(opts ...ClientOption) *Client {
 		backoff.WithMaxElapsedTime(30*time.Second),
 		backoff.WithMaxInterval(5*time.Second),
 		backoff.WithMultiplier(1.5),
+		backoff.WithRandomizationFactor(0.1),
 	)
 
 	c := &Client{
@@ -55,7 +55,6 @@ func NewClient(opts ...ClientOption) *Client {
 
 		sentMessageChan:   make(chan bool),
 		heartbeatStopChan: make(chan bool),
-		heartbeatTicker:   time.NewTicker(heartbeatPeriod_ms * time.Millisecond),
 
 		backoff: b,
 	}
@@ -176,16 +175,17 @@ func (c *Client) Logout() {
 }
 
 func (c *Client) runHeartbeat() {
-	defer c.heartbeatTicker.Stop()
+	ticker := time.NewTicker(heartbeatPeriod_ms * time.Millisecond)
+	defer ticker.Stop()
 
 	for {
 		select {
-		case <-c.heartbeatTicker.C:
+		case <-ticker.C:
 			c.sendHeartbeat()
 		case <-c.sentMessageChan:
 			// If we sent a message to the server, reset ticker so we're not sending
 			// more often than we need to
-			c.heartbeatTicker.Reset(heartbeatPeriod_ms * time.Millisecond)
+			ticker.Reset(heartbeatPeriod_ms * time.Millisecond)
 			continue
 		case <-c.heartbeatStopChan:
 			return
@@ -202,6 +202,8 @@ func (c *Client) sendHeartbeat() {
 }
 
 func (c *Client) reconnect() error {
+	c.heartbeatStopChan <- true
+
 	notify := func(err error, t time.Duration) {
 		log.Printf("retrying connetion in: %s\n", t)
 	}
