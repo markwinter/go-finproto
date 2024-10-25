@@ -8,7 +8,6 @@ package itch
 import (
 	"bufio"
 	"io"
-	"log"
 	"os"
 	"slices"
 	"time"
@@ -79,8 +78,6 @@ func ParseFile(path string, config Configuration) ([]ItchMessage, error) {
 		reader = bufio.NewReader(file)
 	}
 
-	log.Printf("Using buffer size: %v\n", reader.Size())
-
 	return ParseReader(reader, config)
 }
 
@@ -145,10 +142,6 @@ func ParseReader(reader *bufio.Reader, config Configuration) ([]ItchMessage, err
 		messages = append(messages, parseData(data[0], data))
 	}
 
-	elapsed := time.Since(start)
-	log.Printf("Parsed %d messages in %s", len(messages), elapsed)
-	log.Printf("Parse rate: %.2f messages/s", float64(len(messages))/elapsed.Seconds())
-
 	return messages, nil
 }
 
@@ -191,11 +184,6 @@ func ParseMany(data []byte, config Configuration) ([]ItchMessage, error) {
 
 		messages = append(messages, parseData(data[startOfMessage], data[startOfMessage:endOfMessage]))
 	}
-
-	elapsed := time.Since(start)
-
-	log.Printf("Parsed %d messages in %s", len(messages), elapsed)
-	log.Printf("Parse rate: %.2f messages/s", float64(len(messages))/elapsed.Seconds())
 
 	return messages, nil
 }
