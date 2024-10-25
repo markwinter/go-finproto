@@ -17,8 +17,7 @@ func DebugPacket(text string) {
 }
 
 func main() {
-	client := soupbintcp.NewClient(
-		soupbintcp.WithServer("127.0.0.1", "4000"),
+	client := soupbintcp.NewClient("127.0.0.1:1337",
 		soupbintcp.WithAuth("test", "test"),
 		soupbintcp.WithCallback(ReceivePacket),
 		soupbintcp.WithDebugCallback(DebugPacket),

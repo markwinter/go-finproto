@@ -3,7 +3,6 @@ package soupbintcp
 import (
 	"encoding/binary"
 	"errors"
-	"fmt"
 	"log"
 	"net"
 	"strconv"
@@ -23,14 +22,17 @@ type Client struct {
 	// debugCallback is called for every debug packet received. This is not normally used
 	debugCallBack func(string)
 
-	serverIp   string
-	serverPort string
-	username   string
-	password   string
+	serverAddr string
 
-	conn              net.Conn
-	sequenceNumber    uint64
-	session           string
+	username string
+	password string
+
+	conn               net.Conn
+	compressionEnabled bool
+
+	sequenceNumber uint64
+	session        string
+
 	heartbeatStopChan chan bool
 	sentMessageChan   chan bool
 
@@ -38,7 +40,7 @@ type Client struct {
 }
 
 // NewClient creates a new soupbintcp client. The default parameters can be configured using ClientOptions passed in as parameters
-func NewClient(opts ...ClientOption) *Client {
+func NewClient(addr string, opts ...ClientOption) *Client {
 	b := backoff.NewExponentialBackOff(
 		backoff.WithInitialInterval(100*time.Millisecond),
 		backoff.WithMaxElapsedTime(30*time.Second),
@@ -48,6 +50,8 @@ func NewClient(opts ...ClientOption) *Client {
 	)
 
 	c := &Client{
+		serverAddr: addr,
+
 		session:        "",
 		sequenceNumber: 0, // 0 indicates start receiving most recently generated message
 
@@ -65,7 +69,7 @@ func NewClient(opts ...ClientOption) *Client {
 }
 
 func (c *Client) connect() error {
-	conn, err := net.Dial("tcp", fmt.Sprintf("%s:%s", c.serverIp, c.serverPort))
+	conn, err := net.Dial("tcp", c.serverAddr)
 	if err != nil {
 		return err
 	}
@@ -189,6 +193,7 @@ func (c *Client) Receive() {
 
 		packet, err := getNextPacket(c.conn)
 		if err != nil {
+			log.Printf("error getting packet: %v", err)
 			if err := c.reconnect(); err != nil {
 				return
 			}

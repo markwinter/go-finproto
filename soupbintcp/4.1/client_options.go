@@ -31,18 +31,17 @@ func WithDebugCallback(callback func(string)) ClientOption {
 	}
 }
 
-// WithServer sets the ip and port to use to connect to the Server
-func WithServer(ip, port string) ClientOption {
-	return func(c *Client) {
-		c.serverIp = ip
-		c.serverPort = port
-	}
-}
-
 // WithSession sets the initial session and sequence number when connecting to the Server
 func WithSession(id string, sequence uint64) ClientOption {
 	return func(c *Client) {
 		c.session = id
 		c.sequenceNumber = sequence
+	}
+}
+
+// WithCompression allows you to enable soupbintcp (zlib) compression mode
+func WithCompression(enabled bool) ClientOption {
+	return func(c *Client) {
+		c.compressionEnabled = enabled
 	}
 }
