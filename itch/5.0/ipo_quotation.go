@@ -79,6 +79,13 @@ func ParseIpoQuotation(data []byte) IpoQuotation {
 
 	releaseTime := binary.BigEndian.Uint32(data[19:23])
 
+	// TODO:
+	// Prices are given in decimal format with 6 whole number
+	// places followed by 4 decimal digits. The whole number
+	// portion is padded on the left with spaces; the decimal portion
+	// is padded on the right with zeroes. The decimal point is
+	// implied by position, it does not appear inside the price field
+
 	return IpoQuotation{
 		StockLocate:    locate,
 		TrackingNumber: tracking,
@@ -96,11 +103,11 @@ func (i IpoQuotation) String() string {
 		"Tracking Number: %v\n"+
 		"Timestamp: %v\n"+
 		"Stock: %v\n"+
-		"Release Time: %vs\n"+
+		"Release Time: %ds\n"+
 		"Qualifier: %v\n"+
 		"Price: %v\n",
 		i.StockLocate, i.TrackingNumber, i.Timestamp,
-		i.Stock, i.ReleaseTime.Seconds(), i.Qualifier, float64(i.Price)/10000,
+		i.Stock, int64(i.ReleaseTime.Seconds()), i.Qualifier, float64(i.Price)/10000,
 	)
 }
 
