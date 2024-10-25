@@ -10,7 +10,6 @@ import (
 	"io"
 	"os"
 	"slices"
-	"time"
 )
 
 const (
@@ -85,8 +84,6 @@ func ParseFile(path string, config Configuration) ([]ItchMessage, error) {
 func ParseReader(reader *bufio.Reader, config Configuration) ([]ItchMessage, error) {
 	messages := []ItchMessage{}
 
-	start := time.Now()
-
 	for {
 		if config.MaxMessages > 0 && len(messages) >= config.MaxMessages {
 			break
@@ -148,8 +145,6 @@ func ParseReader(reader *bufio.Reader, config Configuration) ([]ItchMessage, err
 // ParseMany parses multiple ITCH messages from byte data already loaded into memory
 func ParseMany(data []byte, config Configuration) ([]ItchMessage, error) {
 	messages := []ItchMessage{}
-
-	start := time.Now()
 
 	dp := 0
 
