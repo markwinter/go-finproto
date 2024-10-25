@@ -21,7 +21,6 @@ const (
 	MESSAGE_PARTICIPANT_POSITION uint8 = 'L'
 	MESSAGE_MWCB_LEVEL           uint8 = 'V'
 	MESSAGE_MWCB_STATUS          uint8 = 'W'
-	MESSAGE_IPO_QUOTATION        uint8 = 'K'
 	MESSAGE_LULD_COLLAR          uint8 = 'J'
 	MESSAGE_OPERATIONAL_HALT     uint8 = 'h'
 	MESSAGE_ORDER_ADD            uint8 = 'A'
@@ -44,7 +43,6 @@ const (
 	participantPositionSize = 26
 	mwcbLevelSize           = 35
 	mwcbStatusSize          = 12
-	ipoQuotationSize        = 28
 	luldSize                = 35
 	operationalHaltSize     = 21
 	orderAddSize            = 36

@@ -14,6 +14,10 @@ import (
 type ReleaseQualifier uint8
 
 const (
+	MESSAGE_IPO_QUOTATION uint8 = 'K'
+
+	ipoQuotationSize = 28
+
 	QUALIFIER_ANTICIPATED       ReleaseQualifier = 'A'
 	QUALIFER_CANCELED_POSTPONED ReleaseQualifier = 'C'
 )
@@ -34,8 +38,34 @@ func (i IpoQuotation) Type() uint8 {
 
 func (i IpoQuotation) Bytes() []byte {
 	data := make([]byte, ipoQuotationSize)
-	// TODO: implement
+
+	data[0] = MESSAGE_IPO_QUOTATION
+	binary.BigEndian.PutUint16(data[1:3], i.StockLocate)
+
+	// Order of these fields are important. We write timestamp to 3:11 first to let us write a uint64, then overwrite 3:5 with tracking number
+	binary.BigEndian.PutUint64(data[3:11], uint64(i.Timestamp.Nanoseconds()))
+	binary.BigEndian.PutUint16(data[3:5], i.TrackingNumber)
+
+	copy(data[11:19], []byte(fmt.Sprintf("%-8s", i.Stock)))
+
+	binary.BigEndian.PutUint32(data[19:23], uint32(i.ReleaseTime.Seconds()))
+
+	data[23] = byte(i.Qualifier)
+	binary.BigEndian.PutUint32(data[24:28], i.Price)
+
 	return data
+}
+
+func MakeIpoQuotation(stockLocate, trackingNumber uint16, timestamp time.Duration, stock string, releaseTime time.Duration, qualifier ReleaseQualifier, price uint32) IpoQuotation {
+	return IpoQuotation{
+		StockLocate:    stockLocate,
+		TrackingNumber: trackingNumber,
+		Timestamp:      timestamp,
+		Stock:          fmt.Sprintf("%-8s", stock),
+		ReleaseTime:    releaseTime,
+		Qualifier:      qualifier,
+		Price:          price,
+	}
 }
 
 func ParseIpoQuotation(data []byte) IpoQuotation {
@@ -45,11 +75,16 @@ func ParseIpoQuotation(data []byte) IpoQuotation {
 	data[4] = 0
 	t := binary.BigEndian.Uint64(data[3:11])
 
+	stock := strings.TrimSpace(string(data[11:19]))
+
+	releaseTime := binary.BigEndian.Uint32(data[19:23])
+
 	return IpoQuotation{
 		StockLocate:    locate,
 		TrackingNumber: tracking,
 		Timestamp:      time.Duration(t),
-		Stock:          strings.TrimSpace(string(data[11:19])),
+		Stock:          stock,
+		ReleaseTime:    time.Duration(uint64(releaseTime) * uint64(time.Second)),
 		Qualifier:      ReleaseQualifier(data[23]),
 		Price:          binary.BigEndian.Uint32(data[24:28]),
 	}
@@ -61,10 +96,11 @@ func (i IpoQuotation) String() string {
 		"Tracking Number: %v\n"+
 		"Timestamp: %v\n"+
 		"Stock: %v\n"+
+		"Release Time: %vs\n"+
 		"Qualifier: %v\n"+
 		"Price: %v\n",
 		i.StockLocate, i.TrackingNumber, i.Timestamp,
-		i.Stock, i.Qualifier, float64(i.Price)/10000,
+		i.Stock, i.ReleaseTime.Seconds(), i.Qualifier, float64(i.Price)/10000,
 	)
 }
 
