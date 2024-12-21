@@ -28,7 +28,21 @@ func (l LuldCollar) Type() uint8 {
 
 func (l LuldCollar) Bytes() []byte {
 	data := make([]byte, luldSize)
-	// TODO: implement
+
+	data[0] = MESSAGE_LULD_COLLAR
+	binary.BigEndian.PutUint16(data[1:3], l.StockLocate)
+
+	// Order of these fields are important. We write timestamp to 3:11 first to let us write a uint64, then overwrite 3:5 with tracking number
+	binary.BigEndian.PutUint64(data[3:11], uint64(l.Timestamp.Nanoseconds()))
+	binary.BigEndian.PutUint16(data[3:5], l.TrackingNumber)
+
+	copy(data[11:19], []byte(fmt.Sprintf("%-8s", l.Stock)))
+
+	binary.BigEndian.PutUint32(data[19:23], l.ReferencePrice)
+	binary.BigEndian.PutUint32(data[23:27], l.UpperPrice)
+	binary.BigEndian.PutUint32(data[27:31], l.LowerPrice)
+	binary.BigEndian.PutUint32(data[31:], l.Extension)
+
 	return data
 }
 

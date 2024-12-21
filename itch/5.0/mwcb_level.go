@@ -25,7 +25,18 @@ func (m MwcbLevel) Type() uint8 {
 
 func (m MwcbLevel) Bytes() []byte {
 	data := make([]byte, mwcbLevelSize)
-	// TODO: implement
+
+	data[0] = MESSAGE_MWCB_LEVEL
+	binary.BigEndian.PutUint16(data[1:3], m.StockLocate)
+
+	// Order of these fields are important. We write timestamp to 3:11 first to let us write a uint64, then overwrite 3:5 with tracking number
+	binary.BigEndian.PutUint64(data[3:11], uint64(m.Timestamp.Nanoseconds()))
+	binary.BigEndian.PutUint16(data[3:5], m.TrackingNumber)
+
+	binary.BigEndian.PutUint64(data[11:19], m.LevelOne)
+	binary.BigEndian.PutUint64(data[19:27], m.LevelTwo)
+	binary.BigEndian.PutUint64(data[27:], m.LevelThree)
+
 	return data
 }
 
