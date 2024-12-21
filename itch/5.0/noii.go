@@ -41,7 +41,28 @@ func (n Noii) Type() uint8 {
 
 func (n Noii) Bytes() []byte {
 	data := make([]byte, noiiSize)
-	// TODO: implement
+
+	data[0] = MESSAGE_NOII
+
+	binary.BigEndian.PutUint16(data[1:3], n.StockLocate)
+
+	// Order of these fields are important. We write timestamp to 3:11 first to let us write a uint64, then overwrite 3:5 with tracking number
+	binary.BigEndian.PutUint64(data[3:11], uint64(n.Timestamp.Nanoseconds()))
+	binary.BigEndian.PutUint16(data[3:5], n.TrackingNumber)
+
+	binary.BigEndian.PutUint64(data[11:19], n.PairedShares)
+	binary.BigEndian.PutUint64(data[19:27], n.ImbalanceShares)
+	data[27] = byte(n.ImbalanceDirection)
+
+	copy(data[28:36], []byte(fmt.Sprintf("%-8s", n.Stock)))
+
+	binary.BigEndian.PutUint32(data[36:40], n.FarPrice)
+	binary.BigEndian.PutUint32(data[40:44], n.NearPrice)
+	binary.BigEndian.PutUint32(data[44:48], n.CurrentPrice)
+
+	data[48] = byte(n.CrossType)
+	data[49] = n.VariationIndicator
+
 	return data
 }
 

@@ -24,7 +24,17 @@ func (o OrderCancel) Type() uint8 {
 
 func (o OrderCancel) Bytes() []byte {
 	data := make([]byte, orderCancelSize)
-	// TODO: implement
+
+	data[0] = MESSAGE_ORDER_CANCEL
+	binary.BigEndian.PutUint16(data[1:3], o.StockLocate)
+
+	// Order of these fields are important. We write timestamp to 3:11 first to let us write a uint64, then overwrite 3:5 with tracking number
+	binary.BigEndian.PutUint64(data[3:11], uint64(o.Timestamp.Nanoseconds()))
+	binary.BigEndian.PutUint16(data[3:5], o.TrackingNumber)
+
+	binary.BigEndian.PutUint64(data[11:19], o.Reference)
+	binary.BigEndian.PutUint32(data[19:], o.Shares)
+
 	return data
 }
 

@@ -36,6 +36,23 @@ func (o OrderAdd) Type() uint8 {
 func (o OrderAdd) Bytes() []byte {
 	data := make([]byte, orderAddSize)
 	// TODO: implement
+
+	data[0] = MESSAGE_ORDER_ADD
+	binary.BigEndian.PutUint16(data[1:3], o.StockLocate)
+
+	// Order of these fields are important. We write timestamp to 3:11 first to let us write a uint64, then overwrite 3:5 with tracking number
+	binary.BigEndian.PutUint64(data[3:11], uint64(o.Timestamp.Nanoseconds()))
+	binary.BigEndian.PutUint16(data[3:5], o.TrackingNumber)
+
+	binary.BigEndian.PutUint64(data[11:19], o.Reference)
+	data[19] = byte(o.OrderIndicator)
+
+	binary.BigEndian.PutUint32(data[20:24], o.Shares)
+
+	copy(data[24:32], []byte(fmt.Sprintf("%-8s", o.Stock)))
+
+	binary.BigEndian.PutUint32(data[32:], o.Price)
+
 	return data
 }
 
@@ -57,7 +74,25 @@ func (o OrderAddAttributed) Type() uint8 {
 
 func (o OrderAddAttributed) Bytes() []byte {
 	data := make([]byte, orderAddAttrSize)
-	// TODO: implement
+
+	data[0] = MESSAGE_ORDER_ADD_ATTRIBUTED
+	binary.BigEndian.PutUint16(data[1:3], o.StockLocate)
+
+	// Order of these fields are important. We write timestamp to 3:11 first to let us write a uint64, then overwrite 3:5 with tracking number
+	binary.BigEndian.PutUint64(data[3:11], uint64(o.Timestamp.Nanoseconds()))
+	binary.BigEndian.PutUint16(data[3:5], o.TrackingNumber)
+
+	binary.BigEndian.PutUint64(data[11:19], o.Reference)
+	data[19] = byte(o.OrderIndicator)
+
+	binary.BigEndian.PutUint32(data[20:24], o.Shares)
+
+	copy(data[24:32], []byte(fmt.Sprintf("%-8s", o.Stock)))
+
+	binary.BigEndian.PutUint32(data[32:36], o.Price)
+
+	copy(data[36:], []byte(fmt.Sprintf("%-4s", o.Attribution)))
+
 	return data
 }
 

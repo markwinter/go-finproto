@@ -24,7 +24,7 @@ type TradeCross struct {
 	Stock          string
 	Timestamp      time.Duration
 	MatchNumber    uint64
-	Shares         uint32
+	Shares         uint64
 	CrossPrice     uint32
 	StockLocate    uint16
 	TrackingNumber uint16
@@ -37,7 +37,23 @@ func (t TradeCross) Type() uint8 {
 
 func (t TradeCross) Bytes() []byte {
 	data := make([]byte, tradeCrossSize)
-	// TODO: implement
+
+	data[0] = MESSAGE_TRADE_CROSS
+	binary.BigEndian.PutUint16(data[1:3], t.StockLocate)
+
+	// Order of these fields are important. We write timestamp to 3:11 first to let us write a uint64, then overwrite 3:5 with tracking number
+	binary.BigEndian.PutUint64(data[3:11], uint64(t.Timestamp.Nanoseconds()))
+	binary.BigEndian.PutUint16(data[3:5], t.TrackingNumber)
+
+	binary.BigEndian.PutUint64(data[11:19], t.Shares)
+
+	copy(data[19:27], []byte(fmt.Sprintf("%-8s", t.Stock)))
+
+	binary.BigEndian.PutUint32(data[27:31], t.CrossPrice)
+	binary.BigEndian.PutUint64(data[31:39], t.MatchNumber)
+
+	data[39] = byte(t.CrossType)
+
 	return data
 }
 
@@ -56,7 +72,7 @@ func ParseTradeCross(data []byte) (TradeCross, error) {
 		StockLocate:    locate,
 		TrackingNumber: tracking,
 		Timestamp:      time.Duration(t),
-		Shares:         binary.BigEndian.Uint32(data[11:19]),
+		Shares:         binary.BigEndian.Uint64(data[11:19]),
 		Stock:          strings.TrimSpace(string(data[19:27])),
 		CrossPrice:     binary.BigEndian.Uint32(data[27:31]),
 		MatchNumber:    binary.BigEndian.Uint64(data[31:39]),

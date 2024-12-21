@@ -36,7 +36,21 @@ func (t StockTradingAction) Type() uint8 {
 
 func (t StockTradingAction) Bytes() []byte {
 	data := make([]byte, stockTradingActionSize)
-	// TODO: implement
+
+	data[0] = MESSAGE_STOCK_TRADING_ACTION
+	binary.BigEndian.PutUint16(data[1:3], t.StockLocate)
+
+	// Order of these fields are important. We write timestamp to 3:11 first to let us write a uint64, then overwrite 3:5 with tracking number
+	binary.BigEndian.PutUint64(data[3:11], uint64(t.Timestamp.Nanoseconds()))
+	binary.BigEndian.PutUint16(data[3:5], t.TrackingNumber)
+
+	copy(data[11:19], []byte(fmt.Sprintf("%-8s", t.Stock)))
+
+	data[19] = byte(t.TradingState)
+	data[20] = t.Reserved
+
+	copy(data[21:25], []byte(fmt.Sprintf("%-4s", t.Reason)))
+
 	return data
 }
 

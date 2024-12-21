@@ -29,7 +29,25 @@ func (t TradeNonCross) Type() uint8 {
 
 func (t TradeNonCross) Bytes() []byte {
 	data := make([]byte, tradeNonCrossSize)
-	// TODO: implement
+
+	data[0] = MESSAGE_TRADE_NON_CROSS
+	binary.BigEndian.PutUint16(data[1:3], t.StockLocate)
+
+	// Order of these fields are important. We write timestamp to 3:11 first to let us write a uint64, then overwrite 3:5 with tracking number
+	binary.BigEndian.PutUint64(data[3:11], uint64(t.Timestamp.Nanoseconds()))
+	binary.BigEndian.PutUint16(data[3:5], t.TrackingNumber)
+
+	binary.BigEndian.PutUint64(data[11:19], t.Reference)
+
+	data[19] = byte(t.OrderIndicator)
+
+	binary.BigEndian.PutUint32(data[20:24], t.Shares)
+
+	copy(data[24:32], []byte(fmt.Sprintf("%-8s", t.Stock)))
+
+	binary.BigEndian.PutUint32(data[32:36], t.Price)
+	binary.BigEndian.PutUint64(data[36:], t.MatchNumber)
+
 	return data
 }
 
