@@ -35,7 +35,6 @@ func (o OrderAdd) Type() uint8 {
 
 func (o OrderAdd) Bytes() []byte {
 	data := make([]byte, orderAddSize)
-	// TODO: implement
 
 	data[0] = MESSAGE_ORDER_ADD
 	binary.BigEndian.PutUint16(data[1:3], o.StockLocate)

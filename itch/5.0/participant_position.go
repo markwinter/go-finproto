@@ -49,7 +49,26 @@ func (p ParticipantPosition) Type() uint8 {
 
 func (p ParticipantPosition) Bytes() []byte {
 	data := make([]byte, participantPositionSize)
-	// TODO: implement
+
+	data[0] = MESSAGE_PARTICIPANT_POSITION
+	binary.BigEndian.PutUint16(data[1:3], p.StockLocate)
+
+	// Order of these fields are important. We write timestamp to 3:11 first to let us write a uint64, then overwrite 3:5 with tracking number
+	binary.BigEndian.PutUint64(data[3:11], uint64(p.Timestamp.Nanoseconds()))
+	binary.BigEndian.PutUint16(data[3:5], p.TrackingNumber)
+
+	copy(data[11:15], []byte(fmt.Sprintf("%-4s", p.Mpid)))
+	copy(data[15:23], []byte(fmt.Sprintf("%-8s", p.Stock)))
+
+	if p.PrimaryMM {
+		data[23] = 'Y'
+	} else {
+		data[23] = 'N'
+	}
+
+	data[24] = byte(p.Mode)
+	data[25] = byte(p.State)
+
 	return data
 }
 

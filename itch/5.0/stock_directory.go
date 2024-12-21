@@ -183,6 +183,19 @@ func (s StockDirectory) Bytes() []byte {
 		data[29] = 'T'
 	}
 
+	data[30] = []byte(s.ShortSaleThresholdIndicator)[0]
+	data[31] = []byte(s.IpoFlag)[0]
+	data[32] = []byte(s.LuldReferencePriceTier)[0]
+	data[33] = []byte(s.EtpFlag)[0]
+
+	binary.BigEndian.PutUint32(data[34:38], s.EtpLeverageFactor)
+
+	if s.InverseIndicator {
+		data[38] = 'Y'
+	} else {
+		data[38] = 'N'
+	}
+
 	return data
 }
 
