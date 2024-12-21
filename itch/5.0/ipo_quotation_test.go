@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/google/go-cmp/cmp/cmpopts"
 )
 
 func TestMakeAndParseIpoQuotation(t *testing.T) {
@@ -18,7 +17,7 @@ func TestMakeAndParseIpoQuotation(t *testing.T) {
 		StockLocate:    0,
 		TrackingNumber: 1,
 		Timestamp:      timeSinceMidnight,
-		Stock:          "AAPL    ",
+		Stock:          "AAPL",
 		ReleaseTime:    timeSinceMidnight,
 		Qualifier:      QUALIFIER_ANTICIPATED,
 		Price:          21,
@@ -35,8 +34,7 @@ func TestMakeAndParseIpoQuotation(t *testing.T) {
 		t.Errorf("error parsing event: %v", err)
 	}
 
-	// Ignoring Stock field because the byte representation contains right-padded spacing, whilst the Struct has it trimmed
-	if !cmp.Equal(m, parsedEvent, cmpopts.IgnoreFields(IpoQuotation{}, "Stock")) {
+	if !cmp.Equal(m, parsedEvent) {
 		t.Errorf("parsed event and original event are not equal:\n%v", cmp.Diff(m, parsedEvent))
 	}
 }

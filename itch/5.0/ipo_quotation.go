@@ -61,7 +61,7 @@ func MakeIpoQuotation(stockLocate, trackingNumber uint16, timestamp time.Duratio
 		StockLocate:    stockLocate,
 		TrackingNumber: trackingNumber,
 		Timestamp:      timestamp,
-		Stock:          fmt.Sprintf("%-8s", stock),
+		Stock:          stock,
 		ReleaseTime:    releaseTime,
 		Qualifier:      qualifier,
 		Price:          price,
