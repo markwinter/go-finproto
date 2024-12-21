@@ -8,6 +8,8 @@ import (
 	"encoding/binary"
 	"fmt"
 	"time"
+
+	"github.com/quagmt/udecimal"
 )
 
 type OrderExecuted struct {
@@ -45,7 +47,7 @@ type OrderExecutedPrice struct {
 	Reference      uint64
 	MatchNumber    uint64
 	Shares         uint32
-	ExecutionPrice uint32
+	ExecutionPrice udecimal.Decimal // Price (4)
 	StockLocate    uint16
 	TrackingNumber uint16
 	Printable      bool
@@ -75,7 +77,8 @@ func (o OrderExecutedPrice) Bytes() []byte {
 		data[31] = 'N'
 	}
 
-	binary.BigEndian.PutUint32(data[32:], o.ExecutionPrice)
+	price, _ := priceToBytes(o.ExecutionPrice, 4)
+	copy(data[32:], price)
 
 	return data
 }
@@ -117,6 +120,8 @@ func ParseOrderExecutedPrice(data []byte) (OrderExecutedPrice, error) {
 		printable = true
 	}
 
+	price, _ := bytesToPrice(data[32:], 4)
+
 	return OrderExecutedPrice{
 		StockLocate:    locate,
 		TrackingNumber: tracking,
@@ -125,7 +130,7 @@ func ParseOrderExecutedPrice(data []byte) (OrderExecutedPrice, error) {
 		Shares:         binary.BigEndian.Uint32(data[19:23]),
 		MatchNumber:    binary.BigEndian.Uint64(data[23:31]),
 		Printable:      printable,
-		ExecutionPrice: binary.BigEndian.Uint32(data[32:]),
+		ExecutionPrice: price,
 	}, nil
 }
 
@@ -154,6 +159,6 @@ func (o OrderExecutedPrice) String() string {
 		"Execution Price: %v\n",
 		o.StockLocate, o.TrackingNumber, o.Timestamp,
 		o.Reference, o.Shares, o.MatchNumber,
-		o.Printable, float64(o.ExecutionPrice)/10000,
+		o.Printable, o.ExecutionPrice,
 	)
 }

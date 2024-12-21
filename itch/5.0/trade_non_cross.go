@@ -9,6 +9,8 @@ import (
 	"fmt"
 	"strings"
 	"time"
+
+	"github.com/quagmt/udecimal"
 )
 
 type TradeNonCross struct {
@@ -17,7 +19,7 @@ type TradeNonCross struct {
 	Reference      uint64
 	MatchNumber    uint64
 	Shares         uint32
-	Price          uint32
+	Price          udecimal.Decimal // Price (4)
 	StockLocate    uint16
 	TrackingNumber uint16
 	OrderIndicator OrderIndicator
@@ -45,7 +47,9 @@ func (t TradeNonCross) Bytes() []byte {
 
 	copy(data[24:32], []byte(fmt.Sprintf("%-8s", t.Stock)))
 
-	binary.BigEndian.PutUint32(data[32:36], t.Price)
+	price, _ := priceToBytes(t.Price, 4)
+	copy(data[32:36], price)
+
 	binary.BigEndian.PutUint64(data[36:], t.MatchNumber)
 
 	return data
@@ -62,6 +66,8 @@ func ParseTradeNonCross(data []byte) (TradeNonCross, error) {
 	data[4] = 0
 	t := binary.BigEndian.Uint64(data[3:11])
 
+	price, _ := bytesToPrice(data[32:36], 4)
+
 	return TradeNonCross{
 		StockLocate:    locate,
 		TrackingNumber: tracking,
@@ -70,7 +76,7 @@ func ParseTradeNonCross(data []byte) (TradeNonCross, error) {
 		OrderIndicator: OrderIndicator(data[19]),
 		Shares:         binary.BigEndian.Uint32(data[20:24]),
 		Stock:          strings.TrimSpace(string(data[24:32])),
-		Price:          binary.BigEndian.Uint32(data[32:36]),
+		Price:          price,
 		MatchNumber:    binary.BigEndian.Uint64(data[36:]),
 	}, nil
 }
@@ -88,6 +94,6 @@ func (o TradeNonCross) String() string {
 		"Match Number: %v\n",
 		o.StockLocate, o.TrackingNumber, o.Timestamp,
 		o.Reference, o.OrderIndicator, o.Shares, o.Stock,
-		float64(o.Price)/10000, o.MatchNumber,
+		o.Price, o.MatchNumber,
 	)
 }

@@ -9,6 +9,8 @@ import (
 	"fmt"
 	"strings"
 	"time"
+
+	"github.com/quagmt/udecimal"
 )
 
 type OrderIndicator uint8
@@ -23,7 +25,7 @@ type OrderAdd struct {
 	Timestamp      time.Duration
 	Reference      uint64
 	Shares         uint32
-	Price          uint32
+	Price          udecimal.Decimal // Price (4)
 	StockLocate    uint16
 	TrackingNumber uint16
 	OrderIndicator OrderIndicator
@@ -50,7 +52,8 @@ func (o OrderAdd) Bytes() []byte {
 
 	copy(data[24:32], []byte(fmt.Sprintf("%-8s", o.Stock)))
 
-	binary.BigEndian.PutUint32(data[32:], o.Price)
+	price, _ := priceToBytes(o.Price, 4)
+	copy(data[32:36], price)
 
 	return data
 }
@@ -61,7 +64,7 @@ type OrderAddAttributed struct {
 	Timestamp      time.Duration
 	Reference      uint64
 	Shares         uint32
-	Price          uint32
+	Price          udecimal.Decimal // Price (4)
 	StockLocate    uint16
 	TrackingNumber uint16
 	OrderIndicator OrderIndicator
@@ -88,7 +91,8 @@ func (o OrderAddAttributed) Bytes() []byte {
 
 	copy(data[24:32], []byte(fmt.Sprintf("%-8s", o.Stock)))
 
-	binary.BigEndian.PutUint32(data[32:36], o.Price)
+	price, _ := priceToBytes(o.Price, 4)
+	copy(data[32:36], price)
 
 	copy(data[36:], []byte(fmt.Sprintf("%-4s", o.Attribution)))
 
@@ -106,6 +110,8 @@ func ParseOrderAdd(data []byte) (OrderAdd, error) {
 	data[4] = 0
 	t := binary.BigEndian.Uint64(data[3:11])
 
+	price, _ := bytesToPrice(data[32:], 4)
+
 	return OrderAdd{
 		StockLocate:    locate,
 		TrackingNumber: tracking,
@@ -114,7 +120,7 @@ func ParseOrderAdd(data []byte) (OrderAdd, error) {
 		OrderIndicator: OrderIndicator(data[19]),
 		Shares:         binary.BigEndian.Uint32(data[20:24]),
 		Stock:          strings.TrimSpace(string(data[24:32])),
-		Price:          binary.BigEndian.Uint32(data[32:]),
+		Price:          price,
 	}, nil
 }
 
@@ -129,6 +135,8 @@ func ParseOrderAddAttributed(data []byte) (OrderAddAttributed, error) {
 	data[4] = 0
 	t := binary.BigEndian.Uint64(data[3:11])
 
+	price, _ := bytesToPrice(data[32:36], 4)
+
 	return OrderAddAttributed{
 		StockLocate:    locate,
 		TrackingNumber: tracking,
@@ -137,7 +145,7 @@ func ParseOrderAddAttributed(data []byte) (OrderAddAttributed, error) {
 		OrderIndicator: OrderIndicator(data[19]),
 		Shares:         binary.BigEndian.Uint32(data[20:24]),
 		Stock:          strings.TrimSpace(string(data[24:32])),
-		Price:          binary.BigEndian.Uint32(data[32:36]),
+		Price:          price,
 		Attribution:    strings.TrimSpace(string(data[36:])),
 	}, nil
 }
@@ -154,7 +162,7 @@ func (a OrderAdd) String() string {
 		"Price: %v\n",
 		a.StockLocate, a.TrackingNumber, a.Timestamp,
 		a.Reference, a.OrderIndicator, a.Shares, a.Stock,
-		float64(a.Price)/10000,
+		a.Price,
 	)
 }
 
@@ -171,7 +179,7 @@ func (a OrderAddAttributed) String() string {
 		"Attribution: %v\n",
 		a.StockLocate, a.TrackingNumber, a.Timestamp,
 		a.Reference, a.OrderIndicator, a.Shares, a.Stock,
-		float64(a.Price)/10000, a.Attribution,
+		a.Price, a.Attribution,
 	)
 }
 

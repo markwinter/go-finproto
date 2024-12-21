@@ -8,25 +8,10 @@ package itch
 import (
 	"bufio"
 	"errors"
-	"fmt"
 	"io"
 	"os"
 	"slices"
 )
-
-type ErrorInvalidPacketSize struct {
-	err error
-}
-
-func (e ErrorInvalidPacketSize) Error() string {
-	return e.err.Error()
-}
-
-func NewInvalidPacketSize(w, g int) ErrorInvalidPacketSize {
-	return ErrorInvalidPacketSize{
-		err: fmt.Errorf("expected data len=%d but got=%d", w, g),
-	}
-}
 
 const (
 	MESSAGE_STOCK_DIRECTORY      uint8 = 'R'
@@ -70,6 +55,10 @@ const (
 	tradeBrokenSize         = 19
 	noiiSize                = 50
 	rpiiSize                = 20
+)
+
+var (
+	ErrorUnknownPacketType = errors.New("unknown packet type")
 )
 
 type ItchMessage interface {
@@ -317,6 +306,6 @@ func parseData(msgType byte, data []byte) (ItchMessage, error) {
 	case MESSAGE_RPII:
 		return ParseRpii(data)
 	default:
-		return nil, fmt.Errorf("unknown packet type: %d", msgType)
+		return nil, NewInvalidPacketType(msgType)
 	}
 }

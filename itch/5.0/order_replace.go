@@ -8,6 +8,8 @@ import (
 	"encoding/binary"
 	"fmt"
 	"time"
+
+	"github.com/quagmt/udecimal"
 )
 
 type OrderReplace struct {
@@ -17,7 +19,7 @@ type OrderReplace struct {
 	OriginalReference uint64
 	NewReference      uint64
 	Shares            uint32
-	Price             uint32
+	Price             udecimal.Decimal // Price (4)
 }
 
 func (o OrderReplace) Type() uint8 {
@@ -37,7 +39,9 @@ func (o OrderReplace) Bytes() []byte {
 	binary.BigEndian.PutUint64(data[11:19], o.OriginalReference)
 	binary.BigEndian.PutUint64(data[19:27], o.NewReference)
 	binary.BigEndian.PutUint32(data[27:31], o.Shares)
-	binary.BigEndian.PutUint32(data[31:], o.Price)
+
+	price, _ := priceToBytes(o.Price, 4)
+	copy(data[31:], price)
 
 	return data
 }
@@ -53,6 +57,8 @@ func ParseOrderReplace(data []byte) (OrderReplace, error) {
 	data[4] = 0
 	t := binary.BigEndian.Uint64(data[3:11])
 
+	price, _ := bytesToPrice(data[31:], 4)
+
 	return OrderReplace{
 		StockLocate:       locate,
 		TrackingNumber:    tracking,
@@ -60,7 +66,7 @@ func ParseOrderReplace(data []byte) (OrderReplace, error) {
 		OriginalReference: binary.BigEndian.Uint64(data[11:19]),
 		NewReference:      binary.BigEndian.Uint64(data[19:27]),
 		Shares:            binary.BigEndian.Uint32(data[27:31]),
-		Price:             binary.BigEndian.Uint32(data[31:]),
+		Price:             price,
 	}, nil
 }
 
@@ -75,6 +81,6 @@ func (o OrderReplace) String() string {
 		"Price: %v\n",
 		o.StockLocate, o.TrackingNumber, o.Timestamp,
 		o.OriginalReference, o.NewReference,
-		o.Shares, float64(o.Price)/10000,
+		o.Shares, o.Price,
 	)
 }

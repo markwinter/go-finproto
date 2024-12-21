@@ -9,6 +9,8 @@ import (
 	"fmt"
 	"strings"
 	"time"
+
+	"github.com/quagmt/udecimal"
 )
 
 type LuldCollar struct {
@@ -16,9 +18,9 @@ type LuldCollar struct {
 	TrackingNumber uint16
 	Timestamp      time.Duration
 	Stock          string
-	ReferencePrice uint32
-	UpperPrice     uint32
-	LowerPrice     uint32
+	ReferencePrice udecimal.Decimal // Price(4)
+	UpperPrice     udecimal.Decimal // Price(4)
+	LowerPrice     udecimal.Decimal // Price(4)
 	Extension      uint32
 }
 
@@ -38,9 +40,14 @@ func (l LuldCollar) Bytes() []byte {
 
 	copy(data[11:19], []byte(fmt.Sprintf("%-8s", l.Stock)))
 
-	binary.BigEndian.PutUint32(data[19:23], l.ReferencePrice)
-	binary.BigEndian.PutUint32(data[23:27], l.UpperPrice)
-	binary.BigEndian.PutUint32(data[27:31], l.LowerPrice)
+	refP, _ := priceToBytes(l.ReferencePrice, 4)
+	upP, _ := priceToBytes(l.UpperPrice, 4)
+	lowP, _ := priceToBytes(l.LowerPrice, 4)
+
+	copy(data[19:23], refP)
+	copy(data[23:27], upP)
+	copy(data[27:31], lowP)
+
 	binary.BigEndian.PutUint32(data[31:], l.Extension)
 
 	return data
@@ -57,14 +64,18 @@ func ParseLuldCollar(data []byte) (LuldCollar, error) {
 	data[4] = 0
 	t := binary.BigEndian.Uint64(data[3:11])
 
+	refP, _ := bytesToPrice(data[19:23], 4)
+	upP, _ := bytesToPrice(data[23:27], 4)
+	lowP, _ := bytesToPrice(data[27:31], 4)
+
 	return LuldCollar{
 		StockLocate:    locate,
 		TrackingNumber: tracking,
 		Timestamp:      time.Duration(t),
 		Stock:          strings.TrimSpace(string(data[11:19])),
-		ReferencePrice: binary.BigEndian.Uint32(data[19:23]),
-		UpperPrice:     binary.BigEndian.Uint32(data[23:27]),
-		LowerPrice:     binary.BigEndian.Uint32(data[27:31]),
+		ReferencePrice: refP,
+		UpperPrice:     upP,
+		LowerPrice:     lowP,
 		Extension:      binary.BigEndian.Uint32(data[31:]),
 	}, nil
 }
@@ -81,9 +92,9 @@ func (l LuldCollar) String() string {
 		"Extension: %v\n",
 		l.StockLocate, l.TrackingNumber, l.Timestamp,
 		l.Stock,
-		float64(l.ReferencePrice)/10000,
-		float64(l.UpperPrice)/10000,
-		float64(l.LowerPrice)/10000,
+		l.ReferencePrice,
+		l.UpperPrice,
+		l.LowerPrice,
 		l.Extension,
 	)
 }

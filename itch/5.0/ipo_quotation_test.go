@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/quagmt/udecimal"
 )
 
 func TestMakeAndParseIpoQuotation(t *testing.T) {
@@ -20,10 +21,10 @@ func TestMakeAndParseIpoQuotation(t *testing.T) {
 		Stock:          "AAPL",
 		ReleaseTime:    timeSinceMidnight,
 		Qualifier:      QUALIFIER_ANTICIPATED,
-		Price:          21,
+		Price:          udecimal.MustFromFloat64(21.45),
 	}
 
-	m := MakeIpoQuotation(0, 1, timeSinceMidnight, "AAPL", timeSinceMidnight, QUALIFIER_ANTICIPATED, 21)
+	m := MakeIpoQuotation(0, 1, timeSinceMidnight, "AAPL", timeSinceMidnight, QUALIFIER_ANTICIPATED, udecimal.MustParse("21.45"))
 
 	if !cmp.Equal(manual, m) {
 		t.Errorf("created event and manual struct not equal:\n%v", cmp.Diff(manual, m))

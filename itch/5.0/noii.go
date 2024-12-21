@@ -9,6 +9,8 @@ import (
 	"fmt"
 	"strings"
 	"time"
+
+	"github.com/quagmt/udecimal"
 )
 
 type ImbalanceDirection uint8
@@ -25,9 +27,9 @@ type Noii struct {
 	Timestamp          time.Duration
 	PairedShares       uint64
 	ImbalanceShares    uint64
-	FarPrice           uint32
-	NearPrice          uint32
-	CurrentPrice       uint32
+	FarPrice           udecimal.Decimal // Price (4)
+	NearPrice          udecimal.Decimal // Price (4)
+	CurrentPrice       udecimal.Decimal // Price (4)
 	StockLocate        uint16
 	TrackingNumber     uint16
 	ImbalanceDirection ImbalanceDirection
@@ -56,9 +58,13 @@ func (n Noii) Bytes() []byte {
 
 	copy(data[28:36], []byte(fmt.Sprintf("%-8s", n.Stock)))
 
-	binary.BigEndian.PutUint32(data[36:40], n.FarPrice)
-	binary.BigEndian.PutUint32(data[40:44], n.NearPrice)
-	binary.BigEndian.PutUint32(data[44:48], n.CurrentPrice)
+	farP, _ := priceToBytes(n.FarPrice, 4)
+	nearP, _ := priceToBytes(n.NearPrice, 4)
+	curP, _ := priceToBytes(n.CurrentPrice, 4)
+
+	copy(data[36:40], farP)
+	copy(data[40:44], nearP)
+	copy(data[44:48], curP)
 
 	data[48] = byte(n.CrossType)
 	data[49] = n.VariationIndicator
@@ -77,6 +83,10 @@ func ParseNoii(data []byte) (Noii, error) {
 	data[4] = 0
 	t := binary.BigEndian.Uint64(data[3:11])
 
+	farP, _ := bytesToPrice(data[36:40], 4)
+	nearP, _ := bytesToPrice(data[40:44], 4)
+	curP, _ := bytesToPrice(data[44:48], 4)
+
 	return Noii{
 		StockLocate:        locate,
 		TrackingNumber:     tracking,
@@ -85,9 +95,9 @@ func ParseNoii(data []byte) (Noii, error) {
 		ImbalanceShares:    binary.BigEndian.Uint64(data[19:27]),
 		ImbalanceDirection: ImbalanceDirection(data[27]),
 		Stock:              strings.TrimSpace(string(data[28:36])),
-		FarPrice:           binary.BigEndian.Uint32(data[36:40]),
-		NearPrice:          binary.BigEndian.Uint32(data[40:44]),
-		CurrentPrice:       binary.BigEndian.Uint32(data[44:48]),
+		FarPrice:           farP,
+		NearPrice:          nearP,
+		CurrentPrice:       curP,
 		CrossType:          CrossType(data[48]),
 		VariationIndicator: data[49],
 	}, nil
@@ -109,8 +119,8 @@ func (n Noii) String() string {
 		"Variation Indicator: %v\n",
 		n.StockLocate, n.TrackingNumber, n.Timestamp,
 		n.PairedShares, n.ImbalanceShares, n.ImbalanceDirection,
-		n.Stock, float64(n.FarPrice)/10000, float64(n.NearPrice)/10000,
-		float64(n.CurrentPrice)/10000, n.CrossType, n.VariationIndicator,
+		n.Stock, n.FarPrice, n.NearPrice,
+		n.CurrentPrice, n.CrossType, n.VariationIndicator,
 	)
 }
 

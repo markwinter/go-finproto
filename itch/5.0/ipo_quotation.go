@@ -9,6 +9,8 @@ import (
 	"fmt"
 	"strings"
 	"time"
+
+	"github.com/quagmt/udecimal"
 )
 
 type ReleaseQualifier uint8
@@ -29,7 +31,7 @@ type IpoQuotation struct {
 	Stock          string
 	ReleaseTime    time.Duration
 	Qualifier      ReleaseQualifier
-	Price          uint32
+	Price          udecimal.Decimal // Price (4)
 }
 
 func (i IpoQuotation) Type() uint8 {
@@ -51,12 +53,14 @@ func (i IpoQuotation) Bytes() []byte {
 	binary.BigEndian.PutUint32(data[19:23], uint32(i.ReleaseTime.Seconds()))
 
 	data[23] = byte(i.Qualifier)
-	binary.BigEndian.PutUint32(data[24:28], i.Price)
+
+	price, _ := priceToBytes(i.Price, 4)
+	copy(data[24:28], price)
 
 	return data
 }
 
-func MakeIpoQuotation(stockLocate, trackingNumber uint16, timestamp time.Duration, stock string, releaseTime time.Duration, qualifier ReleaseQualifier, price uint32) IpoQuotation {
+func MakeIpoQuotation(stockLocate, trackingNumber uint16, timestamp time.Duration, stock string, releaseTime time.Duration, qualifier ReleaseQualifier, price udecimal.Decimal) IpoQuotation {
 	return IpoQuotation{
 		StockLocate:    stockLocate,
 		TrackingNumber: trackingNumber,
@@ -83,12 +87,7 @@ func ParseIpoQuotation(data []byte) (IpoQuotation, error) {
 
 	releaseTime := binary.BigEndian.Uint32(data[19:23])
 
-	// TODO:
-	// Prices are given in decimal format with 6 whole number
-	// places followed by 4 decimal digits. The whole number
-	// portion is padded on the left with spaces; the decimal portion
-	// is padded on the right with zeroes. The decimal point is
-	// implied by position, it does not appear inside the price field
+	price, _ := bytesToPrice(data[24:28], 4)
 
 	return IpoQuotation{
 		StockLocate:    locate,
@@ -97,7 +96,7 @@ func ParseIpoQuotation(data []byte) (IpoQuotation, error) {
 		Stock:          stock,
 		ReleaseTime:    time.Duration(uint64(releaseTime) * uint64(time.Second)),
 		Qualifier:      ReleaseQualifier(data[23]),
-		Price:          binary.BigEndian.Uint32(data[24:28]),
+		Price:          price,
 	}, nil
 }
 
@@ -111,7 +110,7 @@ func (i IpoQuotation) String() string {
 		"Qualifier: %v\n"+
 		"Price: %v\n",
 		i.StockLocate, i.TrackingNumber, i.Timestamp,
-		i.Stock, int64(i.ReleaseTime.Seconds()), i.Qualifier, float64(i.Price)/10000,
+		i.Stock, int64(i.ReleaseTime.Seconds()), i.Qualifier, i.Price.String(),
 	)
 }
 

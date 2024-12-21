@@ -9,6 +9,8 @@ import (
 	"fmt"
 	"strings"
 	"time"
+
+	"github.com/quagmt/udecimal"
 )
 
 type CrossType uint8
@@ -25,7 +27,7 @@ type TradeCross struct {
 	Timestamp      time.Duration
 	MatchNumber    uint64
 	Shares         uint64
-	CrossPrice     uint32
+	CrossPrice     udecimal.Decimal // Price (4)
 	StockLocate    uint16
 	TrackingNumber uint16
 	CrossType      CrossType
@@ -49,7 +51,9 @@ func (t TradeCross) Bytes() []byte {
 
 	copy(data[19:27], []byte(fmt.Sprintf("%-8s", t.Stock)))
 
-	binary.BigEndian.PutUint32(data[27:31], t.CrossPrice)
+	price, _ := priceToBytes(t.CrossPrice, 4)
+	copy(data[27:31], price)
+
 	binary.BigEndian.PutUint64(data[31:39], t.MatchNumber)
 
 	data[39] = byte(t.CrossType)
@@ -68,13 +72,15 @@ func ParseTradeCross(data []byte) (TradeCross, error) {
 	data[4] = 0
 	t := binary.BigEndian.Uint64(data[3:11])
 
+	price, _ := bytesToPrice(data[27:31], 4)
+
 	return TradeCross{
 		StockLocate:    locate,
 		TrackingNumber: tracking,
 		Timestamp:      time.Duration(t),
 		Shares:         binary.BigEndian.Uint64(data[11:19]),
 		Stock:          strings.TrimSpace(string(data[19:27])),
-		CrossPrice:     binary.BigEndian.Uint32(data[27:31]),
+		CrossPrice:     price,
 		MatchNumber:    binary.BigEndian.Uint64(data[31:39]),
 		CrossType:      CrossType(data[39]),
 	}, nil
@@ -91,7 +97,7 @@ func (o TradeCross) String() string {
 		"Match Number: %v\n"+
 		"Cross Type: %v\n",
 		o.StockLocate, o.TrackingNumber, o.Timestamp,
-		o.Shares, o.Stock, float64(o.CrossPrice)/10000,
+		o.Shares, o.Stock, o.CrossPrice,
 		o.MatchNumber, o.CrossType,
 	)
 }
