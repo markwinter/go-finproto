@@ -29,12 +29,5 @@ func priceToBytes(price udecimal.Decimal, precision uint8) ([]byte, error) {
 		bytes[i] = byte(p >> shift)
 	}
 
-	for i := range precision {
-		if bytes[i] != 0x00 {
-			break
-		}
-		bytes[i] = 0x20
-	}
-
 	return bytes, nil
 }

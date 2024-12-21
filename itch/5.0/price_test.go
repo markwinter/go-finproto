@@ -21,6 +21,24 @@ func Test_bytesToPrice(t *testing.T) {
 		{
 			name: "test correct convert precision 4",
 			args: args{
+				data:      []byte{0x00, 0x02, 0xE6, 0x30},
+				precision: 4,
+			},
+			want:    udecimal.MustParse("19.0000"),
+			wantErr: false,
+		},
+		{
+			name: "test correct convert precision 4",
+			args: args{
+				data:      []byte{0x00, 0x01, 0xD4, 0xC0},
+				precision: 4,
+			},
+			want:    udecimal.MustParse("12.0000"),
+			wantErr: false,
+		},
+		{
+			name: "test correct convert precision 4",
+			args: args{
 				data:      []byte{0x04, 0x9C, 0xD6, 0x50},
 				precision: 4,
 			},
