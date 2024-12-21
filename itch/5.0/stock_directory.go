@@ -23,6 +23,8 @@ type IssueSubType string
 type Authenticity uint8
 
 const (
+	stockDirectorySize = 39
+
 	MKTCTG_NASDAQ_GLOBAL_SELECT MarketCategory = 'Q'
 	MKTCTG_NASDAQ_GLOBAL        MarketCategory = 'G'
 	MKTCTG_NASDAQ_CAPITAL       MarketCategory = 'S'
@@ -151,11 +153,44 @@ func (s StockDirectory) Type() uint8 {
 
 func (s StockDirectory) Bytes() []byte {
 	data := make([]byte, stockDirectorySize)
-	// TODO: implement
+
+	data[0] = MESSAGE_STOCK_DIRECTORY
+	binary.BigEndian.PutUint16(data[1:3], s.StockLocate)
+
+	// Order of these fields are important. We write timestamp to 3:11 first to let us write a uint64, then overwrite 3:5 with tracking number
+	binary.BigEndian.PutUint64(data[3:11], uint64(s.Timestamp.Nanoseconds()))
+	binary.BigEndian.PutUint16(data[3:5], s.TrackingNumber)
+
+	copy(data[11:19], []byte(fmt.Sprintf("'%-8s'", s.Stock)))
+
+	data[19] = byte(s.MarketCategory)
+	data[20] = byte(s.FinancialStatusIndicator)
+
+	binary.BigEndian.AppendUint32(data[21:25], s.RoundLotSize)
+
+	if s.RoundLotsOnly {
+		data[25] = 'Y'
+	} else {
+		data[25] = 'N'
+	}
+
+	data[26] = byte(s.IssueClassification)
+	copy(data[27:29], []byte(s.IssueSubType))
+
+	if s.Authenticity == AUTHENTICITY_LIVE {
+		data[29] = 'P'
+	} else {
+		data[29] = 'T'
+	}
+
 	return data
 }
 
-func ParseStockDirectory(data []byte) StockDirectory {
+func ParseStockDirectory(data []byte) (StockDirectory, error) {
+	if len(data) != stockDirectorySize {
+		return StockDirectory{}, NewInvalidPacketSize(stockDirectorySize, len(data))
+	}
+
 	locate := binary.BigEndian.Uint16(data[1:3])
 	tracking := binary.BigEndian.Uint16(data[3:5])
 	data[3] = 0
@@ -198,7 +233,7 @@ func ParseStockDirectory(data []byte) StockDirectory {
 
 	Directory[locate] = sd
 
-	return sd
+	return sd, nil
 }
 
 func (e StockDirectory) String() string {

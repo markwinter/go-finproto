@@ -7,10 +7,26 @@ package itch
 
 import (
 	"bufio"
+	"errors"
+	"fmt"
 	"io"
 	"os"
 	"slices"
 )
+
+type ErrorInvalidPacketSize struct {
+	err error
+}
+
+func (e ErrorInvalidPacketSize) Error() string {
+	return e.err.Error()
+}
+
+func NewInvalidPacketSize(w, g int) ErrorInvalidPacketSize {
+	return ErrorInvalidPacketSize{
+		err: fmt.Errorf("expected data len=%d but got=%d", w, g),
+	}
+}
 
 const (
 	MESSAGE_STOCK_DIRECTORY      uint8 = 'R'
@@ -35,7 +51,6 @@ const (
 	MESSAGE_RPII                 uint8 = 'N'
 
 	// Message lengths are fixed sized.
-	stockDirectorySize      = 39
 	stockTradingActionSize  = 25
 	regShoSize              = 20
 	participantPositionSize = 26
@@ -80,9 +95,12 @@ func ParseFile(path string, config Configuration) ([]ItchMessage, error) {
 	return ParseReader(reader, config)
 }
 
-// ParseReader parses ITCH messages from a bufio.Reader
+// ParseReader parses ITCH messages from a bufio.Reader. Any errors parsing a message will
+// be joined together and returned after parsing all messages.
 func ParseReader(reader *bufio.Reader, config Configuration) ([]ItchMessage, error) {
 	messages := []ItchMessage{}
+
+	allErrs := error(nil)
 
 	for {
 		if config.MaxMessages > 0 && len(messages) >= config.MaxMessages {
@@ -136,17 +154,25 @@ func ParseReader(reader *bufio.Reader, config Configuration) ([]ItchMessage, err
 			}
 		}
 
-		messages = append(messages, parseData(data[0], data))
+		m, err := parseData(data[0], data)
+		if err != nil {
+			allErrs = errors.Join(allErrs, err)
+		}
+
+		messages = append(messages, m)
 	}
 
-	return messages, nil
+	return messages, allErrs
 }
 
-// ParseMany parses multiple ITCH messages from byte data already loaded into memory
+// ParseMany parses multiple ITCH messages from byte data already loaded into memory.
+// Any errors parsing a message will be joined together and returned after parsing all messages.
 func ParseMany(data []byte, config Configuration) ([]ItchMessage, error) {
 	messages := []ItchMessage{}
 
 	dp := 0
+
+	allErrs := error(nil)
 
 	for {
 		if dp >= len(data) {
@@ -177,14 +203,19 @@ func ParseMany(data []byte, config Configuration) ([]ItchMessage, error) {
 			}
 		}
 
-		messages = append(messages, parseData(data[startOfMessage], data[startOfMessage:endOfMessage]))
+		m, err := parseData(data[startOfMessage], data[startOfMessage:endOfMessage])
+		if err != nil {
+			allErrs = errors.Join(allErrs, err)
+		}
+
+		messages = append(messages, m)
 	}
 
-	return messages, nil
+	return messages, allErrs
 }
 
 // Parse will parse a single ITCH message - it should not have a length field prefixed, just give the actual ITCH message
-func Parse(data []byte) ItchMessage {
+func Parse(data []byte) (ItchMessage, error) {
 	return parseData(data[0], data)
 }
 
@@ -239,7 +270,7 @@ func getMessageSize(msgType byte) int {
 	}
 }
 
-func parseData(msgType byte, data []byte) ItchMessage {
+func parseData(msgType byte, data []byte) (ItchMessage, error) {
 	switch msgType {
 	case MESSAGE_SYSTEM_EVENT:
 		return ParseSystemEvent(data)
@@ -286,6 +317,6 @@ func parseData(msgType byte, data []byte) ItchMessage {
 	case MESSAGE_RPII:
 		return ParseRpii(data)
 	default:
-		return nil
+		return nil, fmt.Errorf("unknown packet type: %d", msgType)
 	}
 }

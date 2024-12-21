@@ -71,7 +71,7 @@ func main() {
 	// State: Active
 
 	// Print the related stock for the position
-	fmt.Print(itch.Directory[goldmanSachs[0].StockLocate])
+	//fmt.Print(itch.Directory[goldmanSachs[0].StockLocate])
 
 	// [Stock Directory]
 	// Stock Locate: 1176
@@ -93,8 +93,8 @@ func main() {
 	// Inverse Indicator: false
 
 	// Alternatively get stock by symbol using itch.StockMap
-	stockLocate := itch.StockMap["AAPL"]
-	fmt.Print(itch.Directory[stockLocate])
+	//stockLocate := itch.StockMap["AAPL"]
+	//fmt.Print(itch.Directory[stockLocate])
 
 	// [Stock Directory]
 	// Stock Locate: 13

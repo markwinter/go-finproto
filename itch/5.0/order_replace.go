@@ -30,7 +30,11 @@ func (o OrderReplace) Bytes() []byte {
 	return data
 }
 
-func ParseOrderReplace(data []byte) OrderReplace {
+func ParseOrderReplace(data []byte) (OrderReplace, error) {
+	if len(data) != orderReplaceSize {
+		return OrderReplace{}, NewInvalidPacketSize(orderReplaceSize, len(data))
+	}
+
 	locate := binary.BigEndian.Uint16(data[1:3])
 	tracking := binary.BigEndian.Uint16(data[3:5])
 	data[3] = 0
@@ -45,7 +49,7 @@ func ParseOrderReplace(data []byte) OrderReplace {
 		NewReference:      binary.BigEndian.Uint64(data[19:27]),
 		Shares:            binary.BigEndian.Uint32(data[27:31]),
 		Price:             binary.BigEndian.Uint32(data[31:]),
-	}
+	}, nil
 }
 
 func (o OrderReplace) String() string {

@@ -32,7 +32,11 @@ func (l LuldCollar) Bytes() []byte {
 	return data
 }
 
-func ParseLuldCollar(data []byte) LuldCollar {
+func ParseLuldCollar(data []byte) (LuldCollar, error) {
+	if len(data) != luldSize {
+		return LuldCollar{}, NewInvalidPacketSize(luldSize, len(data))
+	}
+
 	locate := binary.BigEndian.Uint16(data[1:3])
 	tracking := binary.BigEndian.Uint16(data[3:5])
 	data[3] = 0
@@ -48,7 +52,7 @@ func ParseLuldCollar(data []byte) LuldCollar {
 		UpperPrice:     binary.BigEndian.Uint32(data[23:27]),
 		LowerPrice:     binary.BigEndian.Uint32(data[27:31]),
 		Extension:      binary.BigEndian.Uint32(data[31:]),
-	}
+	}, nil
 }
 
 func (l LuldCollar) String() string {

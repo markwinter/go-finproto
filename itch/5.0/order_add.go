@@ -61,7 +61,11 @@ func (o OrderAddAttributed) Bytes() []byte {
 	return data
 }
 
-func ParseOrderAdd(data []byte) OrderAdd {
+func ParseOrderAdd(data []byte) (OrderAdd, error) {
+	if len(data) != orderAddSize {
+		return OrderAdd{}, NewInvalidPacketSize(orderAddSize, len(data))
+	}
+
 	locate := binary.BigEndian.Uint16(data[1:3])
 	tracking := binary.BigEndian.Uint16(data[3:5])
 	data[3] = 0
@@ -77,10 +81,14 @@ func ParseOrderAdd(data []byte) OrderAdd {
 		Shares:         binary.BigEndian.Uint32(data[20:24]),
 		Stock:          strings.TrimSpace(string(data[24:32])),
 		Price:          binary.BigEndian.Uint32(data[32:]),
-	}
+	}, nil
 }
 
-func ParseOrderAddAttributed(data []byte) OrderAddAttributed {
+func ParseOrderAddAttributed(data []byte) (OrderAddAttributed, error) {
+	if len(data) != orderAddAttrSize {
+		return OrderAddAttributed{}, NewInvalidPacketSize(orderAddAttrSize, len(data))
+	}
+
 	locate := binary.BigEndian.Uint16(data[1:3])
 	tracking := binary.BigEndian.Uint16(data[3:5])
 	data[3] = 0
@@ -97,7 +105,7 @@ func ParseOrderAddAttributed(data []byte) OrderAddAttributed {
 		Stock:          strings.TrimSpace(string(data[24:32])),
 		Price:          binary.BigEndian.Uint32(data[32:36]),
 		Attribution:    strings.TrimSpace(string(data[36:])),
-	}
+	}, nil
 }
 
 func (a OrderAdd) String() string {

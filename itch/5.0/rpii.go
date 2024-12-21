@@ -38,7 +38,11 @@ func (r Rpii) Bytes() []byte {
 	return data
 }
 
-func ParseRpii(data []byte) Rpii {
+func ParseRpii(data []byte) (Rpii, error) {
+	if len(data) != rpiiSize {
+		return Rpii{}, NewInvalidPacketSize(rpiiSize, len(data))
+	}
+
 	locate := binary.BigEndian.Uint16(data[1:3])
 	tracking := binary.BigEndian.Uint16(data[3:5])
 	data[3] = 0
@@ -51,7 +55,7 @@ func ParseRpii(data []byte) Rpii {
 		Timestamp:      time.Duration(t),
 		Stock:          strings.TrimSpace(string(data[11:19])),
 		InterestFlag:   RpiInterestFlag(data[19]),
-	}
+	}, nil
 }
 
 func (n Rpii) String() string {

@@ -53,7 +53,11 @@ func (p ParticipantPosition) Bytes() []byte {
 	return data
 }
 
-func ParseParticipantPosition(data []byte) ParticipantPosition {
+func ParseParticipantPosition(data []byte) (ParticipantPosition, error) {
+	if len(data) != participantPositionSize {
+		return ParticipantPosition{}, NewInvalidPacketSize(participantPositionSize, len(data))
+	}
+
 	locate := binary.BigEndian.Uint16(data[1:3])
 	tracking := binary.BigEndian.Uint16(data[3:5])
 	data[3] = 0
@@ -78,7 +82,7 @@ func ParseParticipantPosition(data []byte) ParticipantPosition {
 
 	MarketParticipants[pp.Mpid] = append(MarketParticipants[pp.Mpid], pp)
 
-	return pp
+	return pp, nil
 }
 
 func (p ParticipantPosition) String() string {

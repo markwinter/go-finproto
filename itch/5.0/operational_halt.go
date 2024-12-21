@@ -42,7 +42,11 @@ func (o OperationalHalt) Bytes() []byte {
 	return data
 }
 
-func ParseOperationalHalt(data []byte) OperationalHalt {
+func ParseOperationalHalt(data []byte) (OperationalHalt, error) {
+	if len(data) != operationalHaltSize {
+		return OperationalHalt{}, NewInvalidPacketSize(operationalHaltSize, len(data))
+	}
+
 	locate := binary.BigEndian.Uint16(data[1:3])
 	tracking := binary.BigEndian.Uint16(data[3:5])
 	data[3] = 0
@@ -56,7 +60,7 @@ func ParseOperationalHalt(data []byte) OperationalHalt {
 		Stock:          strings.TrimSpace(string(data[11:19])),
 		MarketCode:     MarketCode(data[19]),
 		HaltAction:     HaltAction(data[20]),
-	}
+	}, nil
 }
 
 func (h OperationalHalt) String() string {

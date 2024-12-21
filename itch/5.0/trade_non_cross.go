@@ -33,7 +33,11 @@ func (t TradeNonCross) Bytes() []byte {
 	return data
 }
 
-func ParseTradeNonCross(data []byte) TradeNonCross {
+func ParseTradeNonCross(data []byte) (TradeNonCross, error) {
+	if len(data) != tradeNonCrossSize {
+		return TradeNonCross{}, NewInvalidPacketSize(tradeNonCrossSize, len(data))
+	}
+
 	locate := binary.BigEndian.Uint16(data[1:3])
 	tracking := binary.BigEndian.Uint16(data[3:5])
 	data[3] = 0
@@ -50,7 +54,7 @@ func ParseTradeNonCross(data []byte) TradeNonCross {
 		Stock:          strings.TrimSpace(string(data[24:32])),
 		Price:          binary.BigEndian.Uint32(data[32:36]),
 		MatchNumber:    binary.BigEndian.Uint64(data[36:]),
-	}
+	}, nil
 }
 
 func (o TradeNonCross) String() string {

@@ -50,7 +50,11 @@ func (o OrderExecutedPrice) Bytes() []byte {
 	return data
 }
 
-func ParseOrderExecuted(data []byte) OrderExecuted {
+func ParseOrderExecuted(data []byte) (OrderExecuted, error) {
+	if len(data) != orderExecutedSize {
+		return OrderExecuted{}, NewInvalidPacketSize(orderExecutedSize, len(data))
+	}
+
 	locate := binary.BigEndian.Uint16(data[1:3])
 	tracking := binary.BigEndian.Uint16(data[3:5])
 	data[3] = 0
@@ -64,10 +68,14 @@ func ParseOrderExecuted(data []byte) OrderExecuted {
 		Reference:      binary.BigEndian.Uint64(data[11:19]),
 		Shares:         binary.BigEndian.Uint32(data[19:23]),
 		MatchNumber:    binary.BigEndian.Uint64(data[23:31]),
-	}
+	}, nil
 }
 
-func ParseOrderExecutedPrice(data []byte) OrderExecutedPrice {
+func ParseOrderExecutedPrice(data []byte) (OrderExecutedPrice, error) {
+	if len(data) != orderExecutedPriceSize {
+		return OrderExecutedPrice{}, NewInvalidPacketSize(orderExecutedPriceSize, len(data))
+	}
+
 	locate := binary.BigEndian.Uint16(data[1:3])
 	tracking := binary.BigEndian.Uint16(data[3:5])
 	data[3] = 0
@@ -88,7 +96,7 @@ func ParseOrderExecutedPrice(data []byte) OrderExecutedPrice {
 		MatchNumber:    binary.BigEndian.Uint64(data[23:31]),
 		Printable:      printable,
 		ExecutionPrice: binary.BigEndian.Uint32(data[32:]),
-	}
+	}, nil
 }
 
 func (o OrderExecuted) String() string {

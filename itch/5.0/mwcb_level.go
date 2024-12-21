@@ -29,7 +29,11 @@ func (m MwcbLevel) Bytes() []byte {
 	return data
 }
 
-func ParseMwcbLevel(data []byte) MwcbLevel {
+func ParseMwcbLevel(data []byte) (MwcbLevel, error) {
+	if len(data) != mwcbLevelSize {
+		return MwcbLevel{}, NewInvalidPacketSize(mwcbLevelSize, len(data))
+	}
+
 	locate := binary.BigEndian.Uint16(data[1:3])
 	tracking := binary.BigEndian.Uint16(data[3:5])
 	data[3] = 0
@@ -43,7 +47,7 @@ func ParseMwcbLevel(data []byte) MwcbLevel {
 		LevelOne:       binary.BigEndian.Uint64(data[11:19]),
 		LevelTwo:       binary.BigEndian.Uint64(data[19:27]),
 		LevelThree:     binary.BigEndian.Uint64(data[27:]),
-	}
+	}, nil
 }
 
 func (l MwcbLevel) String() string {

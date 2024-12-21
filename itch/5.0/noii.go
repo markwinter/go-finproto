@@ -45,7 +45,11 @@ func (n Noii) Bytes() []byte {
 	return data
 }
 
-func ParseNoii(data []byte) Noii {
+func ParseNoii(data []byte) (Noii, error) {
+	if len(data) != noiiSize {
+		return Noii{}, NewInvalidPacketSize(noiiSize, len(data))
+	}
+
 	locate := binary.BigEndian.Uint16(data[1:3])
 	tracking := binary.BigEndian.Uint16(data[3:5])
 	data[3] = 0
@@ -65,7 +69,7 @@ func ParseNoii(data []byte) Noii {
 		CurrentPrice:       binary.BigEndian.Uint32(data[44:48]),
 		CrossType:          CrossType(data[48]),
 		VariationIndicator: data[49],
-	}
+	}, nil
 }
 
 func (n Noii) String() string {

@@ -68,7 +68,11 @@ func MakeIpoQuotation(stockLocate, trackingNumber uint16, timestamp time.Duratio
 	}
 }
 
-func ParseIpoQuotation(data []byte) IpoQuotation {
+func ParseIpoQuotation(data []byte) (IpoQuotation, error) {
+	if len(data) != ipoQuotationSize {
+		return IpoQuotation{}, NewInvalidPacketSize(ipoQuotationSize, len(data))
+	}
+
 	locate := binary.BigEndian.Uint16(data[1:3])
 	tracking := binary.BigEndian.Uint16(data[3:5])
 	data[3] = 0
@@ -94,7 +98,7 @@ func ParseIpoQuotation(data []byte) IpoQuotation {
 		ReleaseTime:    time.Duration(uint64(releaseTime) * uint64(time.Second)),
 		Qualifier:      ReleaseQualifier(data[23]),
 		Price:          binary.BigEndian.Uint32(data[24:28]),
-	}
+	}, nil
 }
 
 func (i IpoQuotation) String() string {

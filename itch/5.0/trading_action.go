@@ -40,7 +40,11 @@ func (t StockTradingAction) Bytes() []byte {
 	return data
 }
 
-func ParseStockTradingAction(data []byte) StockTradingAction {
+func ParseStockTradingAction(data []byte) (StockTradingAction, error) {
+	if len(data) != stockTradingActionSize {
+		return StockTradingAction{}, NewInvalidPacketSize(stockTradingActionSize, len(data))
+	}
+
 	locate := binary.BigEndian.Uint16(data[1:3])
 	tracking := binary.BigEndian.Uint16(data[3:5])
 	data[3] = 0
@@ -55,7 +59,7 @@ func ParseStockTradingAction(data []byte) StockTradingAction {
 		TradingState:   TradingState(data[19]),
 		Reserved:       data[20],
 		Reason:         strings.TrimSpace(string(data[21:25])),
-	}
+	}, nil
 }
 
 func (a StockTradingAction) String() string {

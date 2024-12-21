@@ -27,7 +27,11 @@ func (m MwcbStatus) Bytes() []byte {
 	return data
 }
 
-func ParseMwcbStatus(data []byte) MwcbStatus {
+func ParseMwcbStatus(data []byte) (MwcbStatus, error) {
+	if len(data) != mwcbStatusSize {
+		return MwcbStatus{}, NewInvalidPacketSize(mwcbStatusSize, len(data))
+	}
+
 	locate := binary.BigEndian.Uint16(data[1:3])
 	tracking := binary.BigEndian.Uint16(data[3:5])
 	data[3] = 0
@@ -39,7 +43,7 @@ func ParseMwcbStatus(data []byte) MwcbStatus {
 		TrackingNumber: tracking,
 		Timestamp:      time.Duration(t),
 		BreachedLevel:  data[11],
-	}
+	}, nil
 }
 
 func (l MwcbStatus) String() string {

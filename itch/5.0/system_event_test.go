@@ -26,7 +26,10 @@ func TestMakeAndParseSystemEvent(t *testing.T) {
 		t.Errorf("created event and manual struct not equal:\n%v\n%v", manual, s)
 	}
 
-	parsedEvent := ParseSystemEvent(s.Bytes())
+	parsedEvent, err := ParseSystemEvent(s.Bytes())
+	if err != nil {
+		t.Errorf("got error from ParseSystemEvent: %s", err)
+	}
 
 	if !cmp.Equal(parsedEvent, s) {
 		t.Errorf("parsedEvent and created event not equal:\n%v\n%v", s, parsedEvent)

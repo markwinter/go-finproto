@@ -21,5 +21,4 @@ The `soupbintcp` directory contains a server and client implementation of Nasdaq
 
 ## Suggestions or Contributions
 
-Have a suggestion for a protocol to be implemented? Open an issue and I'll take a look. If I think it will be fun, I'll implement it.
-I also welcome implementations from others if you create a pull request.
+Have a suggestion for a protocol to be implemented? Open an issue and I'll take a look. If I think it will be fun, I'll implement it. I also welcome implementations from others if you create a pull request.

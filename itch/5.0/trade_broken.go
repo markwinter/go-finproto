@@ -27,7 +27,11 @@ func (t TradeBroken) Bytes() []byte {
 	return data
 }
 
-func ParseTradeBroken(data []byte) TradeBroken {
+func ParseTradeBroken(data []byte) (TradeBroken, error) {
+	if len(data) != tradeBrokenSize {
+		return TradeBroken{}, NewInvalidPacketSize(tradeBrokenSize, len(data))
+	}
+
 	locate := binary.BigEndian.Uint16(data[1:3])
 	tracking := binary.BigEndian.Uint16(data[3:5])
 	data[3] = 0
@@ -39,7 +43,7 @@ func ParseTradeBroken(data []byte) TradeBroken {
 		TrackingNumber: tracking,
 		Timestamp:      time.Duration(t),
 		MatchNumber:    binary.BigEndian.Uint64(data[11:]),
-	}
+	}, nil
 }
 
 func (o TradeBroken) String() string {

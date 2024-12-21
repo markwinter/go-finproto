@@ -51,7 +51,11 @@ func (e SystemEvent) Bytes() []byte {
 	return data
 }
 
-func ParseSystemEvent(data []byte) SystemEvent {
+func ParseSystemEvent(data []byte) (SystemEvent, error) {
+	if len(data) != systemEventSize {
+		return SystemEvent{}, NewInvalidPacketSize(systemEventSize, len(data))
+	}
+
 	locate := binary.BigEndian.Uint16(data[1:3])
 	tracking := binary.BigEndian.Uint16(data[3:5])
 	data[3] = 0
@@ -64,7 +68,7 @@ func ParseSystemEvent(data []byte) SystemEvent {
 		TrackingNumber: tracking,
 		Timestamp:      time.Duration(t),
 		EventCode:      event,
-	}
+	}, nil
 }
 
 func MakeSystemEvent(timestamp time.Duration, trackingNumber uint16, eventCode EventCode) SystemEvent {

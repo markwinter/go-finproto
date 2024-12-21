@@ -28,7 +28,11 @@ func (o OrderCancel) Bytes() []byte {
 	return data
 }
 
-func ParseOrderCancel(data []byte) OrderCancel {
+func ParseOrderCancel(data []byte) (OrderCancel, error) {
+	if len(data) != orderCancelSize {
+		return OrderCancel{}, NewInvalidPacketSize(orderCancelSize, len(data))
+	}
+
 	locate := binary.BigEndian.Uint16(data[1:3])
 	tracking := binary.BigEndian.Uint16(data[3:5])
 	data[3] = 0
@@ -41,7 +45,7 @@ func ParseOrderCancel(data []byte) OrderCancel {
 		Timestamp:      time.Duration(t),
 		Reference:      binary.BigEndian.Uint64(data[11:19]),
 		Shares:         binary.BigEndian.Uint32(data[19:23]),
-	}
+	}, nil
 }
 
 func (o OrderCancel) String() string {
