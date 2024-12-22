@@ -8,15 +8,17 @@ import (
 	"encoding/binary"
 	"fmt"
 	"time"
+
+	"github.com/quagmt/udecimal"
 )
 
 type MwcbLevel struct {
 	StockLocate    uint16
 	TrackingNumber uint16
 	Timestamp      time.Duration
-	LevelOne       uint64
-	LevelTwo       uint64
-	LevelThree     uint64
+	LevelOne       udecimal.Decimal // Price (8)
+	LevelTwo       udecimal.Decimal // Price (8)
+	LevelThree     udecimal.Decimal // Price (8)
 }
 
 func (m MwcbLevel) Type() uint8 {
@@ -33,9 +35,13 @@ func (m MwcbLevel) Bytes() []byte {
 	binary.BigEndian.PutUint64(data[3:11], uint64(m.Timestamp.Nanoseconds()))
 	binary.BigEndian.PutUint16(data[3:5], m.TrackingNumber)
 
-	binary.BigEndian.PutUint64(data[11:19], m.LevelOne)
-	binary.BigEndian.PutUint64(data[19:27], m.LevelTwo)
-	binary.BigEndian.PutUint64(data[27:], m.LevelThree)
+	levelOne, _ := priceToBytes(m.LevelOne, 8)
+	levelTwo, _ := priceToBytes(m.LevelTwo, 8)
+	levelThree, _ := priceToBytes(m.LevelThree, 8)
+
+	copy(data[11:19], levelOne)
+	copy(data[19:27], levelTwo)
+	copy(data[27:], levelThree)
 
 	return data
 }
@@ -51,13 +57,17 @@ func ParseMwcbLevel(data []byte) (MwcbLevel, error) {
 	data[4] = 0
 	t := binary.BigEndian.Uint64(data[3:11])
 
+	levelOne, _ := bytesToPrice(data[11:19], 8)
+	levelTwo, _ := bytesToPrice(data[19:27], 8)
+	levelThree, _ := bytesToPrice(data[27:], 8)
+
 	return MwcbLevel{
 		StockLocate:    locate,
 		TrackingNumber: tracking,
 		Timestamp:      time.Duration(t),
-		LevelOne:       binary.BigEndian.Uint64(data[11:19]),
-		LevelTwo:       binary.BigEndian.Uint64(data[19:27]),
-		LevelThree:     binary.BigEndian.Uint64(data[27:]),
+		LevelOne:       levelOne,
+		LevelTwo:       levelTwo,
+		LevelThree:     levelThree,
 	}, nil
 }
 
@@ -70,8 +80,8 @@ func (l MwcbLevel) String() string {
 		"Level Two: %v\n"+
 		"Level Three: %v\n",
 		l.StockLocate, l.TrackingNumber, l.Timestamp,
-		float64(l.LevelOne)/100000000,
-		float64(l.LevelTwo)/100000000,
-		float64(l.LevelThree)/100000000,
+		l.LevelOne,
+		l.LevelTwo,
+		l.LevelThree,
 	)
 }
