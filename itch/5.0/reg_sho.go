@@ -49,9 +49,11 @@ func (r RegSho) Bytes() []byte {
 }
 
 func ParseRegSho(data []byte) (RegSho, error) {
-	if len(data) != stockTradingActionSize {
-		return RegSho{}, NewInvalidPacketSize(stockTradingActionSize, len(data))
+	if len(data) != regShoSize {
+		return RegSho{}, NewInvalidPacketSize(regShoSize, len(data))
 	}
+
+	fmt.Printf("%v\n", data)
 
 	locate := binary.BigEndian.Uint16(data[1:3])
 	tracking := binary.BigEndian.Uint16(data[3:5])
