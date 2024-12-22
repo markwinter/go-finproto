@@ -148,3 +148,31 @@ func TestParseSystemEvent(t *testing.T) {
 		})
 	}
 }
+
+func TestSystemEvent_Bytes(t *testing.T) {
+	startMessagesTimestamp, _ := time.ParseDuration("3h2m33.404452051s")
+
+	tests := []struct {
+		name string
+		e    SystemEvent
+		want []byte
+	}{
+		{
+			name: "Start of Messages",
+			e: SystemEvent{
+				StockLocate:    0,
+				TrackingNumber: 0,
+				EventCode:      EVENT_START_MESSAGES,
+				Timestamp:      startMessagesTimestamp,
+			},
+			want: []byte{83, 0, 0, 0, 0, 9, 246, 73, 200, 12, 211, 79},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.e.Bytes(); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("SystemEvent.Bytes() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
