@@ -102,7 +102,7 @@ func TestParseOrderAddAttributed(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "",
+			name: "CODA",
 			args: args{
 				data: []byte{70, 6, 65, 0, 0, 25, 72, 54, 19, 123, 127, 0, 0, 0, 0, 0, 55, 179, 21, 83, 0, 0, 0, 100, 67, 79, 68, 65, 32, 32, 32, 32, 119, 53, 147, 156, 78, 73, 84, 69},
 			},
@@ -142,7 +142,7 @@ func TestOrderAddAttributed_Bytes(t *testing.T) {
 		want []byte
 	}{
 		{
-			name: "COTA",
+			name: "CODA",
 			o: OrderAddAttributed{
 				StockLocate:    1601,
 				Reference:      3650325,
