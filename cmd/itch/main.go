@@ -6,7 +6,6 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"log"
 
 	itch "github.com/markwinter/go-finproto/itch/5.0"
@@ -18,9 +17,7 @@ func main() {
 
 	config := itch.Configuration{
 		MessageTypes: []byte{
-			itch.MESSAGE_SYSTEM_EVENT,
-			//itch.MESSAGE_STOCK_DIRECTORY,
-			//itch.MESSAGE_PARTICIPANT_POSITION,
+			itch.MESSAGE_ORDER_ADD_ATTRIBUTED,
 		},
 		MaxMessages:         0,
 		ReadBufferSize:      itch.OneGB,
@@ -57,8 +54,8 @@ func main() {
 	*/
 
 	// Get participant positions for Goldman Sachs
-	goldmanSachs := itch.MarketParticipants["GSCO"]
-	fmt.Print(goldmanSachs[0]) // Print their first position
+	//goldmanSachs := itch.MarketParticipants["GSCO"]
+	//fmt.Print(goldmanSachs[0]) // Print their first position
 
 	// [Market Participant Position]
 	// Stock Locate: 1176
