@@ -202,11 +202,6 @@ func ParseStockDirectory(data []byte) (StockDirectory, error) {
 		return StockDirectory{}, NewInvalidPacketSize(stockDirectorySize, len(data))
 	}
 
-	for i := range len(data) {
-		fmt.Printf("%v,", data[i])
-	}
-	fmt.Println("")
-
 	locate := binary.BigEndian.Uint16(data[1:3])
 	tracking := binary.BigEndian.Uint16(data[3:5])
 	data[3] = 0
