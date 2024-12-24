@@ -161,12 +161,12 @@ func (s StockDirectory) Bytes() []byte {
 	binary.BigEndian.PutUint64(data[3:11], uint64(s.Timestamp.Nanoseconds()))
 	binary.BigEndian.PutUint16(data[3:5], s.TrackingNumber)
 
-	copy(data[11:19], []byte(fmt.Sprintf("'%-8s'", s.Stock)))
+	copy(data[11:19], []byte(fmt.Sprintf("%-8s", s.Stock)))
 
 	data[19] = byte(s.MarketCategory)
 	data[20] = byte(s.FinancialStatusIndicator)
 
-	binary.BigEndian.AppendUint32(data[21:25], s.RoundLotSize)
+	binary.BigEndian.PutUint32(data[21:25], s.RoundLotSize)
 
 	if s.RoundLotsOnly {
 		data[25] = 'Y'
@@ -175,14 +175,12 @@ func (s StockDirectory) Bytes() []byte {
 	}
 
 	data[26] = byte(s.IssueClassification)
-	copy(data[27:29], []byte(s.IssueSubType))
+	underlying := string(s.IssueSubType)
+	copy(data[27:29], []byte(fmt.Sprintf("%-2s", underlying)))
 
-	if s.Authenticity == AUTHENTICITY_LIVE {
-		data[29] = 'P'
-	} else {
-		data[29] = 'T'
-	}
+	data[29] = byte(s.Authenticity)
 
+	// TODO: Make types
 	data[30] = []byte(s.ShortSaleThresholdIndicator)[0]
 	data[31] = []byte(s.IpoFlag)[0]
 	data[32] = []byte(s.LuldReferencePriceTier)[0]
@@ -203,6 +201,11 @@ func ParseStockDirectory(data []byte) (StockDirectory, error) {
 	if len(data) != stockDirectorySize {
 		return StockDirectory{}, NewInvalidPacketSize(stockDirectorySize, len(data))
 	}
+
+	for i := range len(data) {
+		fmt.Printf("%v,", data[i])
+	}
+	fmt.Println("")
 
 	locate := binary.BigEndian.Uint16(data[1:3])
 	tracking := binary.BigEndian.Uint16(data[3:5])
