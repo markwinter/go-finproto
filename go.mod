@@ -6,4 +6,4 @@ require github.com/google/go-cmp v0.7.0
 
 require github.com/cenkalti/backoff/v4 v4.3.0
 
-require github.com/quagmt/udecimal v1.6.1
+require github.com/quagmt/udecimal v1.8.0
